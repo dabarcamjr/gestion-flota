@@ -72,7 +72,39 @@ function loadDB(){
   DB.docTypes = DB.docTypes||{tracto:[],rampla:[],persona:[]};
   DB.equipos = DB.equipos||[]; DB.personas = DB.personas||[];
   if(!DB.clientes) DB.clientes = defaultClientes();   // migración Fase 2
+  migrate();                                          // documentos obligatorios faltantes
   ensureIds(); save();
+}
+
+/* migraciones idempotentes de esquema */
+function normNom(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
+function ensureDocType(cat, id, nombre, vig){
+  DB.docTypes[cat] = DB.docTypes[cat]||[];
+  if(!DB.docTypes[cat].some(d=>d.id===id)) DB.docTypes[cat].push({id, nombre, vigenciaMeses:vig});
+}
+function addReqByName(clienteNombre, cat, id){
+  const c=(DB.clientes||[]).find(c=>normNom(c.nombre)===normNom(clienteNombre));
+  if(!c) return;
+  c.requisitos = c.requisitos||{}; c.requisitos[cat] = c.requisitos[cat]||[];
+  if(!c.requisitos[cat].includes(id)) c.requisitos[cat].push(id);
+}
+function migrate(){
+  const v = DB.schemaVersion||1;
+  if(v<2){
+    // documentos obligatorios que solo existían en las vistas de cliente
+    ensureDocType('tracto','padron','Padrón', null);
+    ensureDocType('rampla','padron','Padrón', null);
+    ensureDocType('tracto','rti','RTI', 12);
+    ensureDocType('tracto','registro_nacional','Registro Nacional', 12);
+    ensureDocType('tracto','certificado_mantencion_2','Certificado Mantención 2', 6);
+    // marcarlos como requeridos según cada cliente
+    addReqByName('SITRANS','tracto','padron');
+    addReqByName('SITRANS','rampla','padron');
+    addReqByName('MELON','tracto','rti');
+    addReqByName('MELON','tracto','registro_nacional');
+    addReqByName('AZA','tracto','certificado_mantencion_2');
+    DB.schemaVersion = 2;
+  }
 }
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
 
