@@ -43,16 +43,25 @@ function estadoDe(dias, hasRealizado){
 const ESTADO_ORDEN = { vencido:0, por_vencer:1, sin_dato:2, vigente:3 };
 const ESTADO_LABEL = { vigente:'Vigente', por_vencer:'Por vencer', vencido:'Vencido', sin_dato:'Sin dato' };
 
+/* estado de un documento (fecha o presencia SÍ/NO) */
+function docStatus(doc, dt){
+  if(dt && dt.tipo==='presencia'){
+    const has = !!(doc && doc.cumple);
+    return { est: has?'vigente':'sin_dato', ven:null, dias:null, has };
+  }
+  const has = !!(doc && doc.realizado);
+  const ven = docVence(doc, dt);
+  const dias = diasDe(ven);
+  return { est: has ? estadoDe(dias, true) : 'sin_dato', ven, dias, has };
+}
+
 /* resumen de una entidad: estado general + próximo vencimiento */
 function evalEntidad(ent, cat){
   const dts = docTypesFor(cat).filter(dt=>dt.general!==false); // solo documentos de la Planilla Madre
   let peor=null, prox=null;
   dts.forEach(dt=>{
     const doc = ent.docs && ent.docs[dt.id];
-    const has = !!(doc && doc.realizado);
-    const ven = docVence(doc, dt);
-    const dias = diasDe(ven);
-    const est = (doc||dt) ? estadoDe(dias, has) : 'sin_dato';
+    const {est, ven, dias} = docStatus(doc, dt);
     const ord = ESTADO_ORDEN[est];
     if(peor==null || ord < peor.ord) peor={est,ord};
     if(ven!=null){ if(prox==null || dias < prox.dias) prox={dt, ven, dias, est}; }
@@ -115,6 +124,26 @@ function migrate(){
     }));
     DB.schemaVersion = 3;
   }
+  if(v<4){
+    // Padrón y Registro Nacional son documentos de "presencia" (SÍ/NO), no de fecha.
+    const presencia=['padron','registro_nacional'];
+    ['tracto','rampla','persona'].forEach(cat=> (DB.docTypes[cat]||[]).forEach(d=>{
+      if(d.tipo===undefined) d.tipo = presencia.includes(d.id)?'presencia':'fecha';
+    }));
+    DB.schemaVersion = 4;
+  }
+  if(v<5){
+    // traer a los equipos existentes las fechas/presencia de cliente desde el seed actual (sin sobrescribir lo cargado a mano)
+    const clientDocs=['padron','rti','registro_nacional','certificado_mantencion_2'];
+    const seedEq=(window.SEED&&window.SEED.equipos)||[];
+    const byPat={}; seedEq.forEach(e=> byPat[normNom(e.patente)]=e);
+    DB.equipos.forEach(e=>{
+      const s=byPat[normNom(e.patente)]; if(!s||!s.docs) return;
+      e.docs=e.docs||{};
+      clientDocs.forEach(id=>{ if(s.docs[id]!==undefined && e.docs[id]===undefined) e.docs[id]=s.docs[id]; });
+    });
+    DB.schemaVersion = 5;
+  }
 }
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
 
@@ -144,12 +173,8 @@ function reqIds(cli, cat){ return (cli && cli.requisitos && cli.requisitos[cat])
 function evalCliente(ent, cat, ids){
   const st = ids.map(id=>{
     const dt = findDt(cat,id) || {id,nombre:id,vigenciaMeses:null};
-    const doc = ent.docs[id];
-    const has = !!(doc && doc.realizado);
-    const ven = docVence(doc, dt);
-    const dias = diasDe(ven);
-    let est = has ? estadoDe(dias, true) : 'sin_dato';
-    return { dt, est, ven, dias };
+    const s = docStatus(ent.docs[id], dt);
+    return { dt, est:s.est, ven:s.ven, dias:s.dias };
   });
   let overall = 'acreditado';
   if(st.some(s=>s.est==='vencido'||s.est==='sin_dato')) overall='no_acreditado';
@@ -320,20 +345,32 @@ function renderDocs(){
   if(!dts.length){ $('#docs').innerHTML='<p class="hint">No hay tipos de documento definidos para esta categoría. Agrégalos en Configuración.</p>'; return; }
   $('#docs').innerHTML = dts.map(dt=>{
     const doc = ent.docs[dt.id]||{};
+    if(dt.tipo==='presencia'){
+      const on = !!doc.cumple;
+      return `<div class="docrow">
+        <div class="dn">${esc(dt.nombre)}<small>presencia (SÍ / NO)</small></div>
+        <div><label class="pres-wrap"><input type="checkbox" class="pres-chk" data-doc="${dt.id}"${on?' checked':''}> Cumple (SÍ)</label></div>
+        <div style="text-align:right;min-width:150px">${badge(on?'vigente':'sin_dato')}</div>
+      </div>`;
+    }
     const ven = docVence(doc, dt);
-    const dias = diasDe(ven);
-    const est = estadoDe(dias, !!doc.realizado);
+    const est = estadoDe(diasDe(ven), !!doc.realizado);
     const vig = dt.vigenciaMeses ? `vigencia ${dt.vigenciaMeses} meses` : 'sin caducidad';
     return `<div class="docrow">
       <div class="dn">${esc(dt.nombre)}<small>${vig}</small></div>
-      <div><input type="date" class="input" data-doc="${dt.id}" value="${esc(doc.realizado||'')}" style="width:100%"></div>
+      <div><input type="date" class="input date-doc" data-doc="${dt.id}" value="${esc(doc.realizado||'')}" style="width:100%"></div>
       <div style="text-align:right;min-width:150px">${badge(est)}<div class="dias">${ven?('vence '+fmt(ven)):'—'}</div></div>
     </div>`;
   }).join('');
-  $$('#docs input[data-doc]').forEach(inp=> inp.oninput=()=>{
+  $$('#docs input.date-doc').forEach(inp=> inp.oninput=()=>{
     const id=inp.dataset.doc; const dt=dts.find(d=>d.id===id);
     if(!inp.value){ delete EDIT.ent.docs[id]; }
     else { EDIT.ent.docs[id]={ realizado:inp.value, vence:addMonths(inp.value, dt.vigenciaMeses) }; }
+    renderDocs();
+  });
+  $$('#docs input.pres-chk').forEach(chk=> chk.onchange=()=>{
+    const id=chk.dataset.doc;
+    if(chk.checked){ EDIT.ent.docs[id]={cumple:true}; } else { delete EDIT.ent.docs[id]; }
     renderDocs();
   });
 }
@@ -364,13 +401,14 @@ function renderConfig(){
   html += cats.map(([cat,titulo])=>`
     <div class="cfgcard">
       <h3>${titulo}</h3>
-      <div class="cfgrow head" style="color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.03em"><div>Documento</div><div>Vigencia (meses)</div><div>General</div><div></div></div>
-      ${docTypesFor(cat).map(dt=>`<div class="cfgrow" data-cat="${cat}" data-id="${dt.id}">
+      <div class="cfgrow head" style="color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.03em"><div>Documento</div><div>Tipo</div><div>Vigencia</div><div>General</div><div></div></div>
+      ${docTypesFor(cat).map(dt=>{ const pres=dt.tipo==='presencia'; return `<div class="cfgrow" data-cat="${cat}" data-id="${dt.id}">
         <input class="input cfg-nombre" value="${esc(dt.nombre)}">
-        <input class="input cfg-vig mono" type="number" min="0" placeholder="sin caducidad" value="${dt.vigenciaMeses==null?'':dt.vigenciaMeses}">
+        <select class="input cfg-tipo"><option value="fecha"${!pres?' selected':''}>Fecha</option><option value="presencia"${pres?' selected':''}>SÍ / NO</option></select>
+        <input class="input cfg-vig mono" type="number" min="0" placeholder="${pres?'—':'sin caducidad'}" value="${dt.vigenciaMeses==null?'':dt.vigenciaMeses}"${pres?' disabled':''}>
         <label class="cfg-gen-wrap" title="Cuenta para el estado general del equipo"><input type="checkbox" class="cfg-gen"${dt.general!==false?' checked':''}></label>
         <button class="btn danger sm cfg-del">Quitar</button>
-      </div>`).join('')}
+      </div>`; }).join('')}
       <div style="margin-top:10px"><button class="btn sm cfg-add" data-cat="${cat}">+ Agregar documento</button></div>
     </div>`).join('');
   html += `<div class="cfgcard"><h3>Datos</h3>
@@ -384,10 +422,11 @@ function renderConfig(){
   $$('.cfg-nombre').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.nombre=inp.value; save();} });
   $$('.cfg-vig').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.vigenciaMeses = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0); save();} });
   $$('.cfg-gen').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.general=inp.checked; save();} });
+  $$('.cfg-tipo').forEach(sel=> sel.onchange=()=>{ const row=sel.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.tipo=sel.value; save(); renderConfig();} });
   $$('.cfg-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); const cat=row.dataset.cat; DB.docTypes[cat]=DB.docTypes[cat].filter(d=>d.id!==row.dataset.id); save(); renderConfig(); toast('Documento quitado','ok'); });
   $$('.cfg-add').forEach(b=> b.onclick=()=>{ const cat=b.dataset.cat; const nombre=prompt('Nombre del documento:'); if(!nombre) return;
     const id=nombre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'_'+Math.random().toString(36).slice(2,5);
-    DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12,general:true}); save(); renderConfig(); });
+    DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12,general:true,tipo:'fecha'}); save(); renderConfig(); });
   $('#cfgReset').onclick=()=>{ if(confirm('Esto reemplaza tus datos actuales por la flota original importada. ¿Continuar?')) resetSeed(); };
   $('#cfgWipe').onclick=()=>{ if(confirm('¿Borrar TODOS los datos de este navegador? No se puede deshacer.')){ DB={docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; save(); render(); toast('Datos borrados','ok'); } };
 }
