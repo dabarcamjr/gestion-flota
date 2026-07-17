@@ -10,7 +10,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 
 /* ---------- estado ---------- */
 let DB = null;
-let VIEW = 'equipos';
+let VIEW = 'dashboard';
 let SORT = { key:'estadoOrden', dir:1 };
 let FILTER = { tipo:'todos', estado:'todos', q:'' };
 
@@ -188,9 +188,85 @@ const ACRED_LABEL = { acreditado:'Acreditado', por_vencer:'Por vencer', no_acred
 function render(){
   $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===VIEW));
   if(VIEW==='config'){ $('#kpis').innerHTML=''; renderConfig(); return; }
+  if(VIEW==='dashboard'){ renderDashboard(); return; }
   if(VIEW==='clientes'){ renderClientes(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- dashboard (panel del gerente) ---------- */
+let DASH = { win:'pend' }; // pend = vencidos + por vencer
+function renderDashboard(){
+  const equipos = DB.equipos;
+  // KPIs por estado general
+  const rows = equipos.map(e=>({e, ...evalEntidad(e, e.tipo)}));
+  const c={total:rows.length,vencido:0,por_vencer:0,vigente:0,sin_dato:0};
+  rows.forEach(r=>c[r.estado]++);
+  $('#kpis').innerHTML = `
+    <div class="kpi"><div class="n">${c.total}</div><div class="l">equipos</div></div>
+    <div class="kpi red"><div class="n">${c.vencido}</div><div class="l">Con doc. vencido</div></div>
+    <div class="kpi amber"><div class="n">${c.por_vencer}</div><div class="l">Por vencer (≤30 días)</div></div>
+    <div class="kpi green"><div class="n">${c.vigente}</div><div class="l">Al día</div></div>`;
+
+  // Lista de documentos por vencer/vencidos (todos los documentos de fecha)
+  const items=[];
+  equipos.forEach(e=>{
+    docTypesFor(e.tipo).forEach(dt=>{
+      if(dt.tipo==='presencia') return;
+      const s = docStatus(e.docs&&e.docs[dt.id], dt);
+      if((s.est==='vencido'||s.est==='por_vencer') && s.ven!=null){
+        items.push({patente:e.patente, tipo:e.tipo, id:e.id, doc:dt.nombre, ven:s.ven, dias:s.dias, est:s.est, general:dt.general!==false});
+      }
+    });
+  });
+  items.sort((a,b)=>a.dias-b.dias);
+  const win=DASH.win;
+  const filt = items.filter(it=> win==='vencidos'?it.est==='vencido' : win==='7'?it.dias<=7 : win==='30'?it.dias<=30 : true);
+  const nVenc = items.filter(i=>i.est==='vencido').length;
+  const chip=(k,l)=>`<button class="segb${win===k?' active':''}" data-win="${k}">${l}</button>`;
+
+  // Acreditación por cliente (cards)
+  const clientCards = DB.clientes.map(cli=>{
+    const parts = ['tracto','rampla'].map(tp=>{
+      const ids=reqIds(cli,tp); if(!ids.length) return '';
+      const base=DB.equipos.filter(e=>e.tipo===tp);
+      let ac=0,pv=0,no=0;
+      base.forEach(e=>{const o=evalCliente(e,tp,ids).overall; if(o==='acreditado')ac++; else if(o==='por_vencer')pv++; else if(o==='no_acreditado')no++;});
+      const tot=base.length;
+      return `<div class="ccrow"><span class="cclbl">${tp==='tracto'?'Tractos':'Ramplas'}</span>
+        <span class="ccbar"><i style="width:${tot?ac/tot*100:0}%" class="g"></i><i style="width:${tot?pv/tot*100:0}%" class="a"></i><i style="width:${tot?no/tot*100:0}%" class="r"></i></span>
+        <span class="ccnum"><b>${ac}</b>/${tot}</span></div>`;
+    }).join('');
+    return `<button class="clientcard" data-cli="${cli.id}"><h4>${esc(cli.nombre)}</h4>${parts||'<div class="hint">sin requisitos</div>'}</button>`;
+  }).join('');
+
+  let html = `
+    <section class="dashsec">
+      <div class="dashhead"><h3>Acreditación por cliente</h3><span class="hint">🟢 acreditado · 🟡 por vencer · 🔴 no acreditado · click para ver detalle</span></div>
+      <div class="clientcards">${clientCards}</div>
+    </section>
+    <section class="dashsec">
+      <div class="dashhead"><h3>Vencimientos a atender</h3>
+        <div class="seg">${chip('vencidos','Vencidos ('+nVenc+')')}${chip('7','≤7 días')}${chip('30','≤30 días')}${chip('pend','Todos')}</div>
+      </div>`;
+  if(!filt.length){
+    html += `<div class="tablewrap"><div class="empty">Nada por atender en este filtro. 🎉</div></div>`;
+  } else {
+    const body = filt.slice(0,60).map(it=>{
+      const txt = it.dias<0?`hace ${-it.dias} d`:(it.dias===0?'hoy':`en ${it.dias} d`);
+      return `<tr data-id="${it.id}"><td><b>${esc(it.patente)}</b></td><td><span class="pilltipo">${it.tipo==='tracto'?'Tracto':'Rampla'}</span></td>
+        <td>${esc(it.doc)}${it.general?'':' <span class="pilltipo" style="opacity:.7">cliente</span>'}</td>
+        <td>${badge(it.est)}</td><td class="mono">${fmt(it.ven)}</td><td class="dias">${txt}</td></tr>`;
+    }).join('');
+    html += `<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Tipo</th><th>Documento</th><th>Estado</th><th>Vence</th><th>Faltan</th></tr></thead><tbody>${body}</tbody></table></div>
+      ${filt.length>60?`<p class="hint" style="margin-top:8px">Mostrando 60 de ${filt.length}. Usa los filtros para acotar.</p>`:''}`;
+  }
+  html += `</section>`;
+  $('#view').innerHTML = html;
+
+  $$('.clientcard').forEach(b=> b.onclick=()=>{ CLIENT.id=b.dataset.cli; VIEW='clientes'; render(); });
+  $$('.seg [data-win]').forEach(b=> b.onclick=()=>{ DASH.win=b.dataset.win; renderDashboard(); });
+  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>{ VIEW='equipos'; openEdit(tr.dataset.id); VIEW='dashboard'; });
 }
 
 function currentList(){

@@ -19,6 +19,11 @@ Aplicación web para controlar los **vencimientos documentales** de la flota (**
 - Estado de **acreditación** por equipo: acreditado / por vencer / no acreditado, con el detalle documento a documento.
 - **Exportar CSV** de acreditación por cliente.
 
+## Fase 3 — Panel (Dashboard)
+- Pestaña **📊 Panel** (pantalla de inicio): KPIs de la flota, **vencimientos a atender**
+  (todos los documentos vencidos/por vencer, priorizados) con filtros (vencidos / ≤7 / ≤30 / todos),
+  y **resumen de acreditación por cliente** con barras (acreditado / por vencer / no acreditado).
+
 > Nota: el módulo de personas/conductores se retiró; el foco es exclusivamente flota (equipos) y su acreditación.
 
 ## Cómo funciona
