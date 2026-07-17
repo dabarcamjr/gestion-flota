@@ -5,13 +5,19 @@ personal (conductores), de forma **independiente de Google Sheets**.
 
 🌐 **App:** https://dabarcamjr.github.io/gestion-flota/
 
-## Fase 1 (actual)
+## Fase 1
 - **Equipos** (tractos y ramplas) y **Personas** con sus documentos.
 - Cálculo automático de **vencimiento**, **días restantes** y **estado** (vigente / por vencer / vencido).
 - Alta, edición y eliminación de registros.
 - **Configuración** de tipos de documento y su vigencia (en meses).
 - **Respaldo/exportar** a `.json` (restaurable) y `.csv` (Excel); **importar** respaldo.
 - Sembrada con la flota real (103 equipos, 44 personas).
+
+## Fase 2 — Acreditación por cliente
+- Pestaña **🏢 Clientes** (SQM, SITRANS, MELÓN, AZA; se pueden agregar/quitar).
+- **Matriz de requisitos editable**: qué documentos exige cada cliente por tipo (tracto / rampla / persona).
+- Estado de **acreditación** por equipo y persona: acreditado / por vencer / no acreditado, con el detalle documento a documento.
+- **Exportar CSV** de acreditación por cliente.
 
 ## Cómo funciona
 - 100% en el navegador: los datos se guardan en `localStorage` de este equipo.

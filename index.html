@@ -13,6 +13,7 @@
   <div class="tabs">
     <button class="tab active" data-view="equipos">🚚 Equipos</button>
     <button class="tab" data-view="personas">👤 Personas</button>
+    <button class="tab" data-view="clientes">🏢 Clientes</button>
     <button class="tab" data-view="config">⚙️ Configuración</button>
   </div>
   <div class="spacer"></div>
@@ -54,6 +55,19 @@
         <button class="btn" id="expCsvEq">📄 Equipos a Excel (.csv)</button>
         <button class="btn" id="expCsvPe">📄 Personas a Excel (.csv)</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal requisitos por cliente -->
+<div class="overlay" id="reqOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="reqTitle">Requisitos</h3><button class="iclose" id="reqClose">&times;</button></div>
+    <div class="modal-body" id="reqBody"></div>
+    <div class="modal-foot">
+      <span class="hint" style="flex:1">Marca los documentos que este cliente exige, por tipo.</span>
+      <button class="btn ghost" id="reqCancel">Cancelar</button>
+      <button class="btn primary" id="reqSave">Guardar</button>
     </div>
   </div>
 </div>

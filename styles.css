@@ -113,3 +113,25 @@ td b{color:var(--text)}
   box-shadow:var(--shadow);border-radius:10px;padding:11px 16px;font-size:13.5px;z-index:80;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
 .toast.ok{border-color:var(--green)} .toast.err{border-color:var(--red)}
+
+/* ---- Fase 2: clientes ---- */
+.clientbar{margin-bottom:12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip-cli{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 15px;cursor:pointer;font-weight:700;font-size:13.5px;color:var(--muted)}
+.chip-cli:hover{border-color:var(--brand);color:var(--text)}
+.chip-cli.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.chip-cli.add{font-weight:600;color:var(--brand);border-style:dashed}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.segb{background:transparent;border:0;border-radius:7px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.segb:hover{color:var(--text)}
+.segb.active{background:var(--brand-soft);color:var(--text)}
+.sdot{display:inline-block;width:13px;height:13px;border-radius:50%;background:var(--gray);vertical-align:middle;cursor:help;border:1px solid rgba(0,0,0,.15)}
+.sdot.vigente{background:var(--green)} .sdot.por_vencer{background:var(--amber)} .sdot.vencido{background:var(--red)} .sdot.sin_dato{background:var(--gray);opacity:.5}
+td .sdot{margin:0 auto;display:block}
+.badge.ac_acreditado{background:var(--green-bg);color:var(--green)}
+.badge.ac_por_vencer{background:var(--amber-bg);color:var(--amber)}
+.badge.ac_no_acreditado{background:var(--red-bg);color:var(--red)}
+.badge.ac_sin_req{background:var(--gray-bg);color:var(--gray)}
+.reqgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px;margin-bottom:8px}
+.reqchk{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:4px 0;cursor:pointer}
+.reqchk input{width:16px;height:16px;accent-color:var(--brand)}

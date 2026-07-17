@@ -71,15 +71,59 @@ function loadDB(){
   if(!DB){ DB = JSON.parse(JSON.stringify(window.SEED||{docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]})); }
   DB.docTypes = DB.docTypes||{tracto:[],rampla:[],persona:[]};
   DB.equipos = DB.equipos||[]; DB.personas = DB.personas||[];
+  if(!DB.clientes) DB.clientes = defaultClientes();   // migración Fase 2
   ensureIds(); save();
 }
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
 
+/* ---------- clientes / requisitos ---------- */
+function resolveReq(cat, keywords){
+  return docTypesFor(cat).filter(dt=>{
+    const n=(dt.nombre+' '+dt.id).toLowerCase();
+    return keywords.some(k=>n.includes(k));
+  }).map(dt=>dt.id);
+}
+function defaultClientes(){
+  const defs=[
+    ['SQM',     ['tecnica','permiso','obligatorio','asetran','mantencion'], ['licencia','psicosenso','alcohol']],
+    ['SITRANS', ['tecnica','permiso','obligatorio','padron'],               ['licencia']],
+    ['MELÓN',   ['tecnica','emision','obligatorio','permiso','responsabilidad'], ['licencia','psicosenso']],
+    ['AZA',     ['tecnica','permiso','obligatorio','mantencion'],           ['licencia']],
+  ];
+  return defs.map(([nombre,ek,pk])=>({
+    id:uid(), nombre,
+    requisitos:{ tracto:resolveReq('tracto',ek), rampla:resolveReq('rampla',ek), persona:resolveReq('persona',pk) }
+  }));
+}
+function findCliente(id){ return (DB.clientes||[]).find(c=>c.id===id); }
+function reqIds(cli, cat){ return (cli && cli.requisitos && cli.requisitos[cat]) ? cli.requisitos[cat] : []; }
+
+/* evalúa una entidad frente a los requisitos de un cliente */
+function evalCliente(ent, cat, ids){
+  const st = ids.map(id=>{
+    const dt = findDt(cat,id) || {id,nombre:id,vigenciaMeses:null};
+    const doc = ent.docs[id];
+    const has = !!(doc && doc.realizado);
+    const ven = docVence(doc, dt);
+    const dias = diasDe(ven);
+    let est = has ? estadoDe(dias, true) : 'sin_dato';
+    return { dt, est, ven, dias };
+  });
+  let overall = 'acreditado';
+  if(st.some(s=>s.est==='vencido'||s.est==='sin_dato')) overall='no_acreditado';
+  else if(st.some(s=>s.est==='por_vencer')) overall='por_vencer';
+  if(!ids.length) overall='sin_req';
+  return { st, overall };
+}
+const ACRED_LABEL = { acreditado:'Acreditado', por_vencer:'Por vencer', no_acreditado:'No acreditado', sin_req:'Sin requisitos' };
+
 /* ---------- render ---------- */
 function render(){
   $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===VIEW));
+  if(VIEW==='config'){ $('#kpis').innerHTML=''; renderConfig(); return; }
+  if(VIEW==='clientes'){ renderClientes(); return; }
   renderKpis();
-  if(VIEW==='config') renderConfig(); else renderTable();
+  renderTable();
 }
 
 function currentList(){
@@ -305,6 +349,119 @@ function renderConfig(){
 }
 function findDt(cat,id){ return docTypesFor(cat).find(d=>d.id===id); }
 
+/* ---------- vista clientes (acreditación) ---------- */
+let CLIENT = { id:null, modo:'equipos', tipo:'tracto' };
+function acBadge(est){ return `<span class="badge ac_${est}">${ACRED_LABEL[est]}</span>`; }
+
+function renderClientes(){
+  if(!DB.clientes.length){ DB.clientes=defaultClientes(); save(); }
+  if(!findCliente(CLIENT.id)) CLIENT.id = DB.clientes[0].id;
+  const cli = findCliente(CLIENT.id);
+  const isPer = CLIENT.modo==='personas';
+  const cat = isPer ? 'persona' : CLIENT.tipo;
+  const ids = reqIds(cli, cat);
+
+  // entidades a evaluar
+  const base = isPer ? DB.personas : DB.equipos.filter(e=>e.tipo===CLIENT.tipo);
+  const rows = base.map(ent=>({ent, ...evalCliente(ent, cat, ids)}));
+
+  // KPIs del cliente
+  const c={total:rows.length,acreditado:0,por_vencer:0,no_acreditado:0,sin_req:0};
+  rows.forEach(r=>c[r.overall]++);
+  $('#kpis').innerHTML = `
+    <div class="kpi green"><div class="n">${c.acreditado}</div><div class="l">Acreditados</div></div>
+    <div class="kpi amber"><div class="n">${c.por_vencer}</div><div class="l">Por vencer (≤30 días)</div></div>
+    <div class="kpi red"><div class="n">${c.no_acreditado}</div><div class="l">No acreditados / faltantes</div></div>
+    <div class="kpi"><div class="n">${c.total}</div><div class="l">${isPer?'conductores':(CLIENT.tipo==='tracto'?'tractos':'ramplas')}</div></div>`;
+
+  // toolbar: chips de cliente + modo + tipo
+  const chips = DB.clientes.map(cl=>`<button class="chip-cli${cl.id===CLIENT.id?' active':''}" data-cli="${cl.id}">${esc(cl.nombre)}</button>`).join('');
+  let html = `
+    <div class="clientbar">
+      <div class="chips">${chips}<button class="chip-cli add" id="cliAdd">+ Cliente</button></div>
+    </div>
+    <div class="toolbar">
+      <div class="seg">
+        <button class="segb${!isPer?' active':''}" data-modo="equipos">Equipos</button>
+        <button class="segb${isPer?' active':''}" data-modo="personas">Personas</button>
+      </div>
+      ${!isPer?`<div class="seg">
+        <button class="segb${CLIENT.tipo==='tracto'?' active':''}" data-tipo="tracto">Tractos</button>
+        <button class="segb${CLIENT.tipo==='rampla'?' active':''}" data-tipo="rampla">Ramplas</button></div>`:''}
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn sm" id="cliReq">⚙️ Editar requisitos</button>
+      <button class="btn sm" id="cliCsv">Exportar CSV</button>
+      ${DB.clientes.length>1?`<button class="btn sm danger" id="cliDel">Quitar cliente</button>`:''}
+    </div>`;
+
+  if(!ids.length){
+    html += `<div class="tablewrap"><div class="empty"><b>${esc(cli.nombre)}</b> no tiene documentos requeridos para ${isPer?'personas':(CLIENT.tipo==='tracto'?'tractos':'ramplas')}.<br>Usa <b>⚙️ Editar requisitos</b> para definirlos.</div></div>`;
+  } else {
+    const docHead = ids.map(id=>{ const dt=findDt(cat,id); return `<th title="${esc(dt?dt.nombre:id)}">${esc(dt?dt.nombre:id)}</th>`; }).join('');
+    const nameHead = isPer?'Nombre':'Patente';
+    const head = `<tr><th>${nameHead}</th>${docHead}<th>Acreditación</th></tr>`;
+    // ordenar: peores primero
+    const ord={no_acreditado:0,por_vencer:1,acreditado:2,sin_req:3};
+    rows.sort((a,b)=> (ord[a.overall]-ord[b.overall]) || (isPer? a.ent.nombre.localeCompare(b.ent.nombre): a.ent.patente.localeCompare(b.ent.patente)));
+    const body = rows.map(r=>{
+      const cells = r.st.map(s=>{
+        const t = `${s.dt.nombre} — ${s.est==='sin_dato'?'sin registro':(s.ven?('vence '+fmt(s.ven)):'ok')}`;
+        return `<td><span class="sdot ${s.est}" title="${esc(t)}"></span></td>`;
+      }).join('');
+      const nm = isPer? `<b>${esc(r.ent.nombre)}</b>` : `<b>${esc(r.ent.patente)}</b>`;
+      return `<tr data-id="${r.ent.id}" data-per="${isPer?1:0}">${'<td>'+nm+'</td>'}${cells}<td>${acBadge(r.overall)}</td></tr>`;
+    }).join('');
+    html += `<div class="tablewrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
+      <p class="hint" style="margin-top:10px">🟢 vigente · 🟡 por vencer · 🔴 vencido · ⚪ sin registro · Pasa el cursor sobre cada punto para el detalle. Click en una fila para editar sus documentos.</p>`;
+  }
+  $('#view').innerHTML = html;
+
+  // eventos
+  $$('.chip-cli[data-cli]').forEach(b=> b.onclick=()=>{ CLIENT.id=b.dataset.cli; render(); });
+  $('#cliAdd').onclick=()=>{ const n=prompt('Nombre del nuevo cliente:'); if(!n) return;
+    DB.clientes.push({id:uid(),nombre:n.trim(),requisitos:{tracto:[],rampla:[],persona:[]}}); save(); CLIENT.id=DB.clientes[DB.clientes.length-1].id; render(); openReqEditor(); };
+  $$('.segb[data-modo]').forEach(b=> b.onclick=()=>{ CLIENT.modo=b.dataset.modo; render(); });
+  $$('.segb[data-tipo]').forEach(b=> b.onclick=()=>{ CLIENT.tipo=b.dataset.tipo; render(); });
+  $('#cliReq').onclick=openReqEditor;
+  $('#cliCsv').onclick=()=>exportCliente(cli, cat, ids, rows, isPer);
+  const del=$('#cliDel'); if(del) del.onclick=()=>{ if(confirm('¿Quitar el cliente '+cli.nombre+'? (no borra equipos ni personas)')){ DB.clientes=DB.clientes.filter(c=>c.id!==cli.id); save(); CLIENT.id=null; render(); toast('Cliente quitado','ok'); } };
+  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>{ const prevView=VIEW; VIEW = tr.dataset.per==='1'?'personas':'equipos'; openEdit(tr.dataset.id); VIEW=prevView; });
+}
+
+function openReqEditor(){
+  const cli = findCliente(CLIENT.id); if(!cli) return;
+  const cats=[['tracto','Tractos'],['rampla','Ramplas'],['persona','Personas']];
+  $('#reqTitle').textContent = 'Requisitos de '+cli.nombre;
+  $('#reqBody').innerHTML = cats.map(([cat,tit])=>`
+    <div class="section-title">${tit}</div>
+    <div class="reqgrid">
+      ${docTypesFor(cat).map(dt=>{
+        const on = reqIds(cli,cat).includes(dt.id);
+        return `<label class="reqchk"><input type="checkbox" data-cat="${cat}" data-id="${dt.id}"${on?' checked':''}> ${esc(dt.nombre)}</label>`;
+      }).join('') || '<span class="hint">Sin documentos definidos (ver Configuración)</span>'}
+    </div>`).join('');
+  $('#reqOverlay').classList.add('open');
+}
+function saveReqEditor(){
+  const cli = findCliente(CLIENT.id); if(!cli) return;
+  const req={tracto:[],rampla:[],persona:[]};
+  $$('#reqBody input[type=checkbox]:checked').forEach(ch=> req[ch.dataset.cat].push(ch.dataset.id));
+  cli.requisitos=req; save(); $('#reqOverlay').classList.remove('open'); render(); toast('Requisitos actualizados','ok');
+}
+function exportCliente(cli, cat, ids, rows, isPer){
+  const header=[isPer?'Nombre':'Patente'].concat(ids.map(id=>{const dt=findDt(cat,id);return dt?dt.nombre:id;})).concat(['Acreditación']);
+  const out=[header];
+  rows.forEach(r=>{
+    const row=[isPer?r.ent.nombre:r.ent.patente];
+    r.st.forEach(s=> row.push(s.est==='sin_dato'?'FALTA':(ACRED_LABEL[s.est]||s.est)+(s.ven?(' ('+fmt(s.ven)+')'):'')));
+    row.push(ACRED_LABEL[r.overall]);
+    out.push(row);
+  });
+  const csv='﻿'+out.map(r=>r.map(csvCell).join(';')).join('\n');
+  download('acreditacion-'+cli.nombre.toLowerCase()+'-'+(isPer?'personas':cat)+'-'+toISO(today0())+'.csv', csv, 'text/csv');
+  toast('CSV de '+cli.nombre+' descargado','ok');
+}
+
 /* ---------- exportar / importar ---------- */
 function download(name, text, type){ const b=new Blob([text],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000); }
 function exportJson(){ download('respaldo-flota-'+toISO(today0())+'.json', JSON.stringify(DB,null,1), 'application/json'); toast('Respaldo descargado','ok'); }
@@ -361,7 +518,11 @@ function init(){
   $('#expCsvPe').onclick=()=>{exportCsv('personas');$('#expOverlay').classList.remove('open');};
   $('#btnImport').onclick=()=>$('#fileInput').click();
   $('#fileInput').onchange=e=>{ if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; };
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); } });
+  $('#reqClose').onclick=()=>$('#reqOverlay').classList.remove('open');
+  $('#reqCancel').onclick=()=>$('#reqOverlay').classList.remove('open');
+  $('#reqSave').onclick=saveReqEditor;
+  $('#reqOverlay').onclick=e=>{ if(e.target.id==='reqOverlay') e.currentTarget.classList.remove('open'); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); } });
   render();
 }
 init();
