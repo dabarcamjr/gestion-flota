@@ -45,7 +45,8 @@ const ESTADO_LABEL = { vigente:'Vigente', por_vencer:'Por vencer', vencido:'Venc
 
 /* resumen de una entidad: estado general + próximo vencimiento */
 function evalEntidad(ent, cat){
-  const dts = docTypesFor(cat); let peor=null, prox=null;
+  const dts = docTypesFor(cat).filter(dt=>dt.general!==false); // solo documentos de la Planilla Madre
+  let peor=null, prox=null;
   dts.forEach(dt=>{
     const doc = ent.docs && ent.docs[dt.id];
     const has = !!(doc && doc.realizado);
@@ -78,9 +79,9 @@ function loadDB(){
 
 /* migraciones idempotentes de esquema */
 function normNom(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim(); }
-function ensureDocType(cat, id, nombre, vig){
+function ensureDocType(cat, id, nombre, vig, general){
   DB.docTypes[cat] = DB.docTypes[cat]||[];
-  if(!DB.docTypes[cat].some(d=>d.id===id)) DB.docTypes[cat].push({id, nombre, vigenciaMeses:vig});
+  if(!DB.docTypes[cat].some(d=>d.id===id)) DB.docTypes[cat].push({id, nombre, vigenciaMeses:vig, general:general!==false});
 }
 function addReqByName(clienteNombre, cat, id){
   const c=(DB.clientes||[]).find(c=>normNom(c.nombre)===normNom(clienteNombre));
@@ -91,12 +92,12 @@ function addReqByName(clienteNombre, cat, id){
 function migrate(){
   const v = DB.schemaVersion||1;
   if(v<2){
-    // documentos obligatorios que solo existían en las vistas de cliente
-    ensureDocType('tracto','padron','Padrón', null);
-    ensureDocType('rampla','padron','Padrón', null);
-    ensureDocType('tracto','rti','RTI', 12);
-    ensureDocType('tracto','registro_nacional','Registro Nacional', 12);
-    ensureDocType('tracto','certificado_mantencion_2','Certificado Mantención 2', 6);
+    // documentos obligatorios que solo existían en las vistas de cliente (NO cuentan para el estado general)
+    ensureDocType('tracto','padron','Padrón', null, false);
+    ensureDocType('rampla','padron','Padrón', null, false);
+    ensureDocType('tracto','rti','RTI', 12, false);
+    ensureDocType('tracto','registro_nacional','Registro Nacional', 12, false);
+    ensureDocType('tracto','certificado_mantencion_2','Certificado Mantención 2', 6, false);
     // marcarlos como requeridos según cada cliente
     addReqByName('SITRANS','tracto','padron');
     addReqByName('SITRANS','rampla','padron');
@@ -104,6 +105,15 @@ function migrate(){
     addReqByName('MELON','tracto','registro_nacional');
     addReqByName('AZA','tracto','certificado_mantencion_2');
     DB.schemaVersion = 2;
+  }
+  if(v<3){
+    // el estado general se calcula solo con documentos de la Planilla Madre.
+    // Los específicos de cliente quedan fuera del general (general:false).
+    const soloCliente=['padron','rti','registro_nacional','certificado_mantencion_2'];
+    ['tracto','rampla','persona'].forEach(cat=> (DB.docTypes[cat]||[]).forEach(d=>{
+      if(d.general===undefined) d.general = !soloCliente.includes(d.id);
+    }));
+    DB.schemaVersion = 3;
   }
 }
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
@@ -350,14 +360,15 @@ function closeModal(){ $('#overlay').classList.remove('open'); EDIT=null; }
 function renderConfig(){
   $('#kpis').innerHTML='';
   const cats=[['tracto','Documentos de Tractos'],['rampla','Documentos de Ramplas']];
-  let html = `<div class="toolbar"><h2>Configuración</h2><span class="count">Define los tipos de documento y su vigencia. Los vencimientos se calculan con estos valores.</span></div>`;
+  let html = `<div class="toolbar"><h2>Configuración</h2><span class="count">Define los documentos y su vigencia. La casilla <b>General</b> indica si el documento cuenta para el <b>estado general</b> del equipo (lo que exige la Planilla Madre). Los específicos de un cliente (Padrón, RTI…) van desmarcados: solo cuentan en la acreditación de ese cliente.</span></div>`;
   html += cats.map(([cat,titulo])=>`
     <div class="cfgcard">
       <h3>${titulo}</h3>
-      <div class="cfgrow" style="color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.03em"><div>Documento</div><div>Vigencia (meses)</div><div></div></div>
+      <div class="cfgrow head" style="color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.03em"><div>Documento</div><div>Vigencia (meses)</div><div>General</div><div></div></div>
       ${docTypesFor(cat).map(dt=>`<div class="cfgrow" data-cat="${cat}" data-id="${dt.id}">
         <input class="input cfg-nombre" value="${esc(dt.nombre)}">
         <input class="input cfg-vig mono" type="number" min="0" placeholder="sin caducidad" value="${dt.vigenciaMeses==null?'':dt.vigenciaMeses}">
+        <label class="cfg-gen-wrap" title="Cuenta para el estado general del equipo"><input type="checkbox" class="cfg-gen"${dt.general!==false?' checked':''}></label>
         <button class="btn danger sm cfg-del">Quitar</button>
       </div>`).join('')}
       <div style="margin-top:10px"><button class="btn sm cfg-add" data-cat="${cat}">+ Agregar documento</button></div>
@@ -372,10 +383,11 @@ function renderConfig(){
 
   $$('.cfg-nombre').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.nombre=inp.value; save();} });
   $$('.cfg-vig').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.vigenciaMeses = inp.value===''?null:Math.max(0,parseInt(inp.value,10)||0); save();} });
+  $$('.cfg-gen').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const dt=findDt(row.dataset.cat,row.dataset.id); if(dt){dt.general=inp.checked; save();} });
   $$('.cfg-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); const cat=row.dataset.cat; DB.docTypes[cat]=DB.docTypes[cat].filter(d=>d.id!==row.dataset.id); save(); renderConfig(); toast('Documento quitado','ok'); });
   $$('.cfg-add').forEach(b=> b.onclick=()=>{ const cat=b.dataset.cat; const nombre=prompt('Nombre del documento:'); if(!nombre) return;
     const id=nombre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'_'+Math.random().toString(36).slice(2,5);
-    DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12}); save(); renderConfig(); });
+    DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12,general:true}); save(); renderConfig(); });
   $('#cfgReset').onclick=()=>{ if(confirm('Esto reemplaza tus datos actuales por la flota original importada. ¿Continuar?')) resetSeed(); };
   $('#cfgWipe').onclick=()=>{ if(confirm('¿Borrar TODOS los datos de este navegador? No se puede deshacer.')){ DB={docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; save(); render(); toast('Datos borrados','ok'); } };
 }
