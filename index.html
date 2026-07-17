@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestión Documental de Flota · TZamora</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar"><div class="row">
+  <div class="logo">Gestión de Flota <span>· TZamora</span></div>
+  <div class="tabs">
+    <button class="tab active" data-view="equipos">🚚 Equipos</button>
+    <button class="tab" data-view="personas">👤 Personas</button>
+    <button class="tab" data-view="config">⚙️ Configuración</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn ghost sm" id="btnImport">Importar</button>
+  <button class="btn ghost sm" id="btnExport">Exportar ▾</button>
+  <button class="btn primary" id="btnAdd">+ Agregar</button>
+</div></div>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div id="view"></div>
+</main>
+
+<!-- Modal edición -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="mTitle">Editar</h3>
+      <button class="iclose" id="mClose">&times;</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-foot">
+      <button class="btn danger" id="mDelete">Eliminar</button>
+      <div class="spacer"></div>
+      <button class="btn ghost" id="mCancel">Cancelar</button>
+      <button class="btn primary" id="mSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menú exportar -->
+<div class="overlay" id="expOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head"><h3>Exportar / Respaldo</h3><button class="iclose" id="expClose">&times;</button></div>
+    <div class="modal-body">
+      <p class="hint" style="margin-top:0">Descarga tus datos. El respaldo <b>.json</b> permite volver a cargar todo tal cual; el <b>.csv</b> se abre en Excel.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn" id="expJson">💾 Respaldo completo (.json)</button>
+        <button class="btn" id="expCsvEq">📄 Equipos a Excel (.csv)</button>
+        <button class="btn" id="expCsvPe">📄 Personas a Excel (.csv)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script src="seed.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
