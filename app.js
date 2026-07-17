@@ -85,14 +85,14 @@ function resolveReq(cat, keywords){
 }
 function defaultClientes(){
   const defs=[
-    ['SQM',     ['tecnica','permiso','obligatorio','asetran','mantencion'], ['licencia','psicosenso','alcohol']],
-    ['SITRANS', ['tecnica','permiso','obligatorio','padron'],               ['licencia']],
-    ['MELÓN',   ['tecnica','emision','obligatorio','permiso','responsabilidad'], ['licencia','psicosenso']],
-    ['AZA',     ['tecnica','permiso','obligatorio','mantencion'],           ['licencia']],
+    ['SQM',     ['tecnica','permiso','obligatorio','asetran','mantencion']],
+    ['SITRANS', ['tecnica','permiso','obligatorio','padron']],
+    ['MELÓN',   ['tecnica','emision','obligatorio','permiso','responsabilidad']],
+    ['AZA',     ['tecnica','permiso','obligatorio','mantencion']],
   ];
-  return defs.map(([nombre,ek,pk])=>({
+  return defs.map(([nombre,ek])=>({
     id:uid(), nombre,
-    requisitos:{ tracto:resolveReq('tracto',ek), rampla:resolveReq('rampla',ek), persona:resolveReq('persona',pk) }
+    requisitos:{ tracto:resolveReq('tracto',ek), rampla:resolveReq('rampla',ek) }
   }));
 }
 function findCliente(id){ return (DB.clientes||[]).find(c=>c.id===id); }
@@ -317,7 +317,7 @@ function closeModal(){ $('#overlay').classList.remove('open'); EDIT=null; }
 /* ---------- configuración ---------- */
 function renderConfig(){
   $('#kpis').innerHTML='';
-  const cats=[['tracto','Documentos de Tractos'],['rampla','Documentos de Ramplas'],['persona','Documentos de Personas']];
+  const cats=[['tracto','Documentos de Tractos'],['rampla','Documentos de Ramplas']];
   let html = `<div class="toolbar"><h2>Configuración</h2><span class="count">Define los tipos de documento y su vigencia. Los vencimientos se calculan con estos valores.</span></div>`;
   html += cats.map(([cat,titulo])=>`
     <div class="cfgcard">
@@ -357,37 +357,29 @@ function renderClientes(){
   if(!DB.clientes.length){ DB.clientes=defaultClientes(); save(); }
   if(!findCliente(CLIENT.id)) CLIENT.id = DB.clientes[0].id;
   const cli = findCliente(CLIENT.id);
-  const isPer = CLIENT.modo==='personas';
-  const cat = isPer ? 'persona' : CLIENT.tipo;
+  const cat = CLIENT.tipo;               // 'tracto' | 'rampla'
   const ids = reqIds(cli, cat);
 
-  // entidades a evaluar
-  const base = isPer ? DB.personas : DB.equipos.filter(e=>e.tipo===CLIENT.tipo);
+  const base = DB.equipos.filter(e=>e.tipo===CLIENT.tipo);
   const rows = base.map(ent=>({ent, ...evalCliente(ent, cat, ids)}));
 
   // KPIs del cliente
   const c={total:rows.length,acreditado:0,por_vencer:0,no_acreditado:0,sin_req:0};
   rows.forEach(r=>c[r.overall]++);
+  const tipoLbl = CLIENT.tipo==='tracto'?'tractos':'ramplas';
   $('#kpis').innerHTML = `
     <div class="kpi green"><div class="n">${c.acreditado}</div><div class="l">Acreditados</div></div>
     <div class="kpi amber"><div class="n">${c.por_vencer}</div><div class="l">Por vencer (≤30 días)</div></div>
     <div class="kpi red"><div class="n">${c.no_acreditado}</div><div class="l">No acreditados / faltantes</div></div>
-    <div class="kpi"><div class="n">${c.total}</div><div class="l">${isPer?'conductores':(CLIENT.tipo==='tracto'?'tractos':'ramplas')}</div></div>`;
+    <div class="kpi"><div class="n">${c.total}</div><div class="l">${tipoLbl}</div></div>`;
 
-  // toolbar: chips de cliente + modo + tipo
   const chips = DB.clientes.map(cl=>`<button class="chip-cli${cl.id===CLIENT.id?' active':''}" data-cli="${cl.id}">${esc(cl.nombre)}</button>`).join('');
   let html = `
-    <div class="clientbar">
-      <div class="chips">${chips}<button class="chip-cli add" id="cliAdd">+ Cliente</button></div>
-    </div>
+    <div class="clientbar"><div class="chips">${chips}<button class="chip-cli add" id="cliAdd">+ Cliente</button></div></div>
     <div class="toolbar">
       <div class="seg">
-        <button class="segb${!isPer?' active':''}" data-modo="equipos">Equipos</button>
-        <button class="segb${isPer?' active':''}" data-modo="personas">Personas</button>
-      </div>
-      ${!isPer?`<div class="seg">
         <button class="segb${CLIENT.tipo==='tracto'?' active':''}" data-tipo="tracto">Tractos</button>
-        <button class="segb${CLIENT.tipo==='rampla'?' active':''}" data-tipo="rampla">Ramplas</button></div>`:''}
+        <button class="segb${CLIENT.tipo==='rampla'?' active':''}" data-tipo="rampla">Ramplas</button></div>
       <span class="spacer" style="flex:1"></span>
       <button class="btn sm" id="cliReq">⚙️ Editar requisitos</button>
       <button class="btn sm" id="cliCsv">Exportar CSV</button>
@@ -395,21 +387,18 @@ function renderClientes(){
     </div>`;
 
   if(!ids.length){
-    html += `<div class="tablewrap"><div class="empty"><b>${esc(cli.nombre)}</b> no tiene documentos requeridos para ${isPer?'personas':(CLIENT.tipo==='tracto'?'tractos':'ramplas')}.<br>Usa <b>⚙️ Editar requisitos</b> para definirlos.</div></div>`;
+    html += `<div class="tablewrap"><div class="empty"><b>${esc(cli.nombre)}</b> no tiene documentos requeridos para ${tipoLbl}.<br>Usa <b>⚙️ Editar requisitos</b> para definirlos.</div></div>`;
   } else {
     const docHead = ids.map(id=>{ const dt=findDt(cat,id); return `<th title="${esc(dt?dt.nombre:id)}">${esc(dt?dt.nombre:id)}</th>`; }).join('');
-    const nameHead = isPer?'Nombre':'Patente';
-    const head = `<tr><th>${nameHead}</th>${docHead}<th>Acreditación</th></tr>`;
-    // ordenar: peores primero
+    const head = `<tr><th>Patente</th>${docHead}<th>Acreditación</th></tr>`;
     const ord={no_acreditado:0,por_vencer:1,acreditado:2,sin_req:3};
-    rows.sort((a,b)=> (ord[a.overall]-ord[b.overall]) || (isPer? a.ent.nombre.localeCompare(b.ent.nombre): a.ent.patente.localeCompare(b.ent.patente)));
+    rows.sort((a,b)=> (ord[a.overall]-ord[b.overall]) || a.ent.patente.localeCompare(b.ent.patente));
     const body = rows.map(r=>{
       const cells = r.st.map(s=>{
         const t = `${s.dt.nombre} — ${s.est==='sin_dato'?'sin registro':(s.ven?('vence '+fmt(s.ven)):'ok')}`;
         return `<td><span class="sdot ${s.est}" title="${esc(t)}"></span></td>`;
       }).join('');
-      const nm = isPer? `<b>${esc(r.ent.nombre)}</b>` : `<b>${esc(r.ent.patente)}</b>`;
-      return `<tr data-id="${r.ent.id}" data-per="${isPer?1:0}">${'<td>'+nm+'</td>'}${cells}<td>${acBadge(r.overall)}</td></tr>`;
+      return `<tr data-id="${r.ent.id}"><td><b>${esc(r.ent.patente)}</b></td>${cells}<td>${acBadge(r.overall)}</td></tr>`;
     }).join('');
     html += `<div class="tablewrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
       <p class="hint" style="margin-top:10px">🟢 vigente · 🟡 por vencer · 🔴 vencido · ⚪ sin registro · Pasa el cursor sobre cada punto para el detalle. Click en una fila para editar sus documentos.</p>`;
@@ -419,18 +408,17 @@ function renderClientes(){
   // eventos
   $$('.chip-cli[data-cli]').forEach(b=> b.onclick=()=>{ CLIENT.id=b.dataset.cli; render(); });
   $('#cliAdd').onclick=()=>{ const n=prompt('Nombre del nuevo cliente:'); if(!n) return;
-    DB.clientes.push({id:uid(),nombre:n.trim(),requisitos:{tracto:[],rampla:[],persona:[]}}); save(); CLIENT.id=DB.clientes[DB.clientes.length-1].id; render(); openReqEditor(); };
-  $$('.segb[data-modo]').forEach(b=> b.onclick=()=>{ CLIENT.modo=b.dataset.modo; render(); });
+    DB.clientes.push({id:uid(),nombre:n.trim(),requisitos:{tracto:[],rampla:[]}}); save(); CLIENT.id=DB.clientes[DB.clientes.length-1].id; render(); openReqEditor(); };
   $$('.segb[data-tipo]').forEach(b=> b.onclick=()=>{ CLIENT.tipo=b.dataset.tipo; render(); });
   $('#cliReq').onclick=openReqEditor;
-  $('#cliCsv').onclick=()=>exportCliente(cli, cat, ids, rows, isPer);
-  const del=$('#cliDel'); if(del) del.onclick=()=>{ if(confirm('¿Quitar el cliente '+cli.nombre+'? (no borra equipos ni personas)')){ DB.clientes=DB.clientes.filter(c=>c.id!==cli.id); save(); CLIENT.id=null; render(); toast('Cliente quitado','ok'); } };
-  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>{ const prevView=VIEW; VIEW = tr.dataset.per==='1'?'personas':'equipos'; openEdit(tr.dataset.id); VIEW=prevView; });
+  $('#cliCsv').onclick=()=>exportCliente(cli, cat, ids, rows);
+  const del=$('#cliDel'); if(del) del.onclick=()=>{ if(confirm('¿Quitar el cliente '+cli.nombre+'? (no borra equipos)')){ DB.clientes=DB.clientes.filter(c=>c.id!==cli.id); save(); CLIENT.id=null; render(); toast('Cliente quitado','ok'); } };
+  $$('#view tbody tr').forEach(tr=> tr.onclick=()=> openEdit(tr.dataset.id));
 }
 
 function openReqEditor(){
   const cli = findCliente(CLIENT.id); if(!cli) return;
-  const cats=[['tracto','Tractos'],['rampla','Ramplas'],['persona','Personas']];
+  const cats=[['tracto','Tractos'],['rampla','Ramplas']];
   $('#reqTitle').textContent = 'Requisitos de '+cli.nombre;
   $('#reqBody').innerHTML = cats.map(([cat,tit])=>`
     <div class="section-title">${tit}</div>
@@ -444,21 +432,21 @@ function openReqEditor(){
 }
 function saveReqEditor(){
   const cli = findCliente(CLIENT.id); if(!cli) return;
-  const req={tracto:[],rampla:[],persona:[]};
+  const req={tracto:[],rampla:[]};
   $$('#reqBody input[type=checkbox]:checked').forEach(ch=> req[ch.dataset.cat].push(ch.dataset.id));
   cli.requisitos=req; save(); $('#reqOverlay').classList.remove('open'); render(); toast('Requisitos actualizados','ok');
 }
-function exportCliente(cli, cat, ids, rows, isPer){
-  const header=[isPer?'Nombre':'Patente'].concat(ids.map(id=>{const dt=findDt(cat,id);return dt?dt.nombre:id;})).concat(['Acreditación']);
+function exportCliente(cli, cat, ids, rows){
+  const header=['Patente'].concat(ids.map(id=>{const dt=findDt(cat,id);return dt?dt.nombre:id;})).concat(['Acreditación']);
   const out=[header];
   rows.forEach(r=>{
-    const row=[isPer?r.ent.nombre:r.ent.patente];
+    const row=[r.ent.patente];
     r.st.forEach(s=> row.push(s.est==='sin_dato'?'FALTA':(ACRED_LABEL[s.est]||s.est)+(s.ven?(' ('+fmt(s.ven)+')'):'')));
     row.push(ACRED_LABEL[r.overall]);
     out.push(row);
   });
   const csv='﻿'+out.map(r=>r.map(csvCell).join(';')).join('\n');
-  download('acreditacion-'+cli.nombre.toLowerCase()+'-'+(isPer?'personas':cat)+'-'+toISO(today0())+'.csv', csv, 'text/csv');
+  download('acreditacion-'+cli.nombre.toLowerCase()+'-'+cat+'-'+toISO(today0())+'.csv', csv, 'text/csv');
   toast('CSV de '+cli.nombre+' descargado','ok');
 }
 
@@ -515,7 +503,6 @@ function init(){
   $('#expOverlay').onclick=e=>{ if(e.target.id==='expOverlay') e.currentTarget.classList.remove('open'); };
   $('#expJson').onclick=()=>{exportJson();$('#expOverlay').classList.remove('open');};
   $('#expCsvEq').onclick=()=>{exportCsv('equipos');$('#expOverlay').classList.remove('open');};
-  $('#expCsvPe').onclick=()=>{exportCsv('personas');$('#expOverlay').classList.remove('open');};
   $('#btnImport').onclick=()=>$('#fileInput').click();
   $('#fileInput').onchange=e=>{ if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; };
   $('#reqClose').onclick=()=>$('#reqOverlay').classList.remove('open');
