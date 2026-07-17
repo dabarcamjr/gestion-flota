@@ -10,6 +10,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 
 /* ---------- estado ---------- */
 let DB = null;
+let CLOUD = { enabled:false, sb:null, email:'' };
 let VIEW = 'dashboard';
 let SORT = { key:'estadoOrden', dir:1 };
 let FILTER = { tipo:'todos', estado:'todos', q:'' };
@@ -70,20 +71,27 @@ function evalEntidad(ent, cat){
 }
 
 /* ---------- persistencia ---------- */
-function save(){ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+function save(){
+  localStorage.setItem(LS_KEY, JSON.stringify(DB));
+  if(CLOUD.enabled) cloudSaveDebounced();
+}
 function uid(){ return 'e'+Math.random().toString(36).slice(2,9); }
 function ensureIds(){
   ['equipos','personas'].forEach(k=> DB[k].forEach(e=>{ if(!e.id) e.id=uid(); if(!e.docs) e.docs={}; }));
 }
-function loadDB(){
-  const raw = localStorage.getItem(LS_KEY);
-  if(raw){ try{ DB=JSON.parse(raw); }catch(e){ DB=null; } }
-  if(!DB){ DB = JSON.parse(JSON.stringify(window.SEED||{docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]})); }
+function emptyDB(){ return {docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; }
+function normalizeDB(){
   DB.docTypes = DB.docTypes||{tracto:[],rampla:[],persona:[]};
   DB.equipos = DB.equipos||[]; DB.personas = DB.personas||[];
   if(!DB.clientes) DB.clientes = defaultClientes();   // migración Fase 2
-  migrate();                                          // documentos obligatorios faltantes
-  ensureIds(); save();
+  migrate();                                          // documentos obligatorios / esquema
+  ensureIds();
+}
+function loadDB(){
+  const raw = localStorage.getItem(LS_KEY);
+  if(raw){ try{ DB=JSON.parse(raw); }catch(e){ DB=null; } }
+  if(!DB){ DB = JSON.parse(JSON.stringify(window.SEED||emptyDB())); }
+  normalizeDB(); save();
 }
 
 /* migraciones idempotentes de esquema */
@@ -649,10 +657,63 @@ function importJson(file){
 let toastT=null;
 function toast(msg,kind){ const t=$('#toast'); t.textContent=msg; t.className='toast show '+(kind||''); clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast '+(kind||''),2600); }
 
-/* ---------- init / eventos ---------- */
-function init(){
-  loadDB();
-  $$('.tab').forEach(t=> t.onclick=()=>{ VIEW=t.dataset.view; SORT={key: VIEW==='personas'?'estadoOrden':'estadoOrden',dir:1}; FILTER={tipo:'todos',estado:'todos',q:''}; render(); });
+/* ---------- nube (Supabase) ---------- */
+let cloudTimer=null;
+function setCloudState(txt){ const el=$('#cloudState'); if(el) el.textContent=txt; }
+function cloudSaveDebounced(){ clearTimeout(cloudTimer); setCloudState('guardando…'); cloudTimer=setTimeout(cloudPush, 900); }
+async function cloudPush(){
+  if(!CLOUD.enabled) return;
+  try{
+    const { error } = await CLOUD.sb.from('flota_state')
+      .update({ data: DB, updated_at: new Date().toISOString(), updated_by: CLOUD.email })
+      .eq('id','main');
+    if(error) throw error;
+    setCloudState('☁️ guardado');
+  }catch(e){ setCloudState('⚠️ sin guardar'); console.warn('cloudPush', e); }
+}
+async function cloudLoad(){
+  const { data, error } = await CLOUD.sb.from('flota_state').select('data').eq('id','main').single();
+  if(error) throw error;
+  const cloud = data && data.data;
+  if(cloud && Array.isArray(cloud.equipos) && cloud.equipos.length){
+    DB = cloud; normalizeDB();
+  } else {
+    // primera vez en la nube: sembrar desde el navegador o el seed
+    const raw = localStorage.getItem(LS_KEY);
+    DB = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(window.SEED||emptyDB()));
+    normalizeDB();
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(DB));
+  await cloudPush(); // guarda la versión normalizada/sembrada
+}
+function showLogin(){ $('#loginScreen').style.display='flex'; setTimeout(()=>{ const em=$('#loginEmail'); if(em) em.focus(); },50); }
+function hideLogin(){ $('#loginScreen').style.display='none'; }
+async function doLogin(e){
+  if(e) e.preventDefault();
+  const email=$('#loginEmail').value.trim(), pass=$('#loginPass').value;
+  const err=$('#loginErr');
+  if(!email||!pass){ err.textContent='Ingresa correo y contraseña.'; return; }
+  $('#loginBtn').textContent='Entrando…'; err.textContent='';
+  try{
+    const { data, error } = await CLOUD.sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw error;
+    await afterAuth(data.user.email);
+  }catch(ex){
+    err.textContent = /invalid/i.test(ex.message||'')?'Correo o contraseña incorrectos.':(ex.message||'No se pudo iniciar sesión.');
+  }finally{ $('#loginBtn').textContent='Entrar'; }
+}
+async function afterAuth(email){
+  CLOUD.email=email; CLOUD.enabled=true; hideLogin();
+  $('#btnLogout').style.display='';
+  setCloudState('☁️ '+(email||''));
+  try{ await cloudLoad(); }
+  catch(e){ toast('Error cargando de la nube: '+(e.message||e),'err'); loadDB(); }
+  render();
+}
+
+/* ---------- eventos ---------- */
+function wireEvents(){
+  $$('.tab').forEach(t=> t.onclick=()=>{ VIEW=t.dataset.view; SORT={key:'estadoOrden',dir:1}; FILTER={tipo:'todos',estado:'todos',q:''}; render(); });
   $('#btnAdd').onclick=openAdd;
   $('#mClose').onclick=closeModal; $('#mCancel').onclick=closeModal;
   $('#mSave').onclick=saveEdit; $('#mDelete').onclick=deleteEdit;
@@ -668,8 +729,25 @@ function init(){
   $('#reqCancel').onclick=()=>$('#reqOverlay').classList.remove('open');
   $('#reqSave').onclick=saveReqEditor;
   $('#reqOverlay').onclick=e=>{ if(e.target.id==='reqOverlay') e.currentTarget.classList.remove('open'); };
+  const lf=$('#loginForm'); if(lf) lf.onsubmit=doLogin;
+  const lo=$('#btnLogout'); if(lo) lo.onclick=async ()=>{ if(CLOUD.sb){ try{ await CLOUD.sb.auth.signOut(); }catch(e){} } location.reload(); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); } });
-  render();
 }
-init();
+
+/* ---------- arranque ---------- */
+async function boot(){
+  wireEvents();
+  if(window.SUPA_URL && window.SUPA_KEY && window.supabase && window.supabase.createClient){
+    CLOUD.sb = window.supabase.createClient(window.SUPA_URL, window.SUPA_KEY);
+    setCloudState('☁️');
+    try{
+      const { data } = await CLOUD.sb.auth.getSession();
+      if(data && data.session){ await afterAuth(data.session.user.email); }
+      else { showLogin(); }
+    }catch(e){ toast('Error de conexión con la nube','err'); showLogin(); }
+  } else {
+    loadDB(); render(); // modo local (sin nube configurada)
+  }
+}
+boot();
 })();

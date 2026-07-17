@@ -17,9 +17,11 @@
     <button class="tab" data-view="config">⚙️ Configuración</button>
   </div>
   <div class="spacer"></div>
+  <span class="cloudstate" id="cloudState"></span>
   <button class="btn ghost sm" id="btnImport">Importar</button>
   <button class="btn ghost sm" id="btnExport">Exportar ▾</button>
   <button class="btn primary" id="btnAdd">+ Agregar</button>
+  <button class="btn ghost sm" id="btnLogout" style="display:none">Salir</button>
 </div></div>
 
 <main>
@@ -74,6 +76,22 @@
 <input type="file" id="fileInput" accept=".json" style="display:none">
 <div class="toast" id="toast"></div>
 
+<!-- Pantalla de inicio de sesión (solo en modo nube) -->
+<div class="loginscreen" id="loginScreen" style="display:none">
+  <form class="logincard" id="loginForm">
+    <div class="loginlogo">Gestión de Flota <span>· TZamora</span></div>
+    <p class="loginsub">Inicia sesión para acceder a tus datos.</p>
+    <label class="loginlbl">Correo</label>
+    <input class="input" id="loginEmail" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+    <label class="loginlbl">Contraseña</label>
+    <input class="input" id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div class="loginerr" id="loginErr"></div>
+    <button class="btn primary" id="loginBtn" type="submit" style="width:100%;justify-content:center;margin-top:6px">Entrar</button>
+  </form>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="seed.js"></script>
 <script src="app.js"></script>
 </body>
