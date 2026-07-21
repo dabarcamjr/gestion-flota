@@ -171,6 +171,19 @@ function migrate(){
     DB.folioSeq = DB.folioSeq || { tracto:1046, rampla:458 };
     DB.schemaVersion = 7;
   }
+  if(v<8){
+    // módulo Mantención por kilometraje
+    if(!DB.mantConfig) DB.mantConfig = { intervaloDefault:50000, avisoKm:5000 };
+    const seedEq=(window.SEED&&window.SEED.equipos)||[];
+    const byPat={}; seedEq.forEach(e=> byPat[normNom(e.patente)]=e);
+    DB.equipos.forEach(e=>{
+      const s=byPat[normNom(e.patente)];
+      if(e.mant===undefined) e.mant = (s&&s.mant) ? s.mant : {ultimoKm:null,ultimaFecha:null,intervalo:null,lugar:'',tipo:'',historial:[]};
+      if(!e.km && s && s.km) e.km=s.km;
+      if(!Array.isArray(e.mant.historial)) e.mant.historial=[];
+    });
+    DB.schemaVersion = 8;
+  }
 }
 function defaultChecklistItems(){
   return {
@@ -242,8 +255,117 @@ function render(){
   if(VIEW==='dashboard'){ renderDashboard(); return; }
   if(VIEW==='clientes'){ renderClientes(); return; }
   if(VIEW==='flota'){ renderFlota(); return; }
+  if(VIEW==='mantencion'){ renderMantencion(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- Mantención por kilometraje ---------- */
+let MANT = { estado:'todos', q:'' };
+let MANT_ID = null;
+const MANT_LABEL = { vencida:'Vencida', proxima:'Próxima', al_dia:'Al día', sin_dato:'Sin dato' };
+function intKm(v){ const n=parseInt(String(v==null?'':v).replace(/[^\d-]/g,''),10); return isNaN(n)?null:n; }
+function evalMant(e){
+  const m=e.mant||{}; const kmAct=intKm(e.km);
+  const inter=m.intervalo||((DB.mantConfig&&DB.mantConfig.intervaloDefault)||50000);
+  const prox=(m.ultimoKm!=null)?(m.ultimoKm+inter):null;
+  const faltante=(prox!=null && kmAct!=null)?(prox-kmAct):null;
+  const aviso=(DB.mantConfig&&DB.mantConfig.avisoKm)||5000;
+  let est='sin_dato';
+  if(faltante!=null) est = faltante<0?'vencida':(faltante<=aviso?'proxima':'al_dia');
+  return { kmAct, inter, prox, faltante, est };
+}
+function nkm(n){ return n==null?'—':Number(n).toLocaleString('es-CL'); }
+function renderMantencion(){
+  const eq=DB.equipos.filter(e=>e.tipo==='tracto');
+  const rows=eq.map(e=>({e, ...evalMant(e)}));
+  const c={total:rows.length,vencida:0,proxima:0,al_dia:0,sin_dato:0};
+  rows.forEach(r=>c[r.est]++);
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="n">${c.total}</div><div class="l">tractos</div></div>
+    <div class="kpi red"><div class="n">${c.vencida}</div><div class="l">Mantención vencida</div></div>
+    <div class="kpi amber"><div class="n">${c.proxima}</div><div class="l">Próxima (≤${nkm((DB.mantConfig&&DB.mantConfig.avisoKm)||5000)} km)</div></div>
+    <div class="kpi green"><div class="n">${c.al_dia}</div><div class="l">Al día</div></div>`;
+
+  let list=rows.filter(r=>{
+    if(MANT.estado!=='todos' && r.est!==MANT.estado) return false;
+    if(MANT.q && !(r.e.patente.toLowerCase().includes(MANT.q.toLowerCase()))) return false;
+    return true;
+  });
+  const ord={vencida:0,proxima:1,sin_dato:2,al_dia:3};
+  list.sort((a,b)=> (ord[a.est]-ord[b.est]) || ((a.faltante==null?9e9:a.faltante)-(b.faltante==null?9e9:b.faltante)));
+
+  const filters=`<div class="toolbar"><h2>Mantención (tractos)</h2>
+    <input class="input search" id="mtq" placeholder="Buscar patente" value="${esc(MANT.q)}">
+    <select class="input" id="mtestado"><option value="todos">Todos</option><option value="vencida">Vencidas</option><option value="proxima">Próximas</option><option value="al_dia">Al día</option><option value="sin_dato">Sin dato</option></select>
+    <span class="count">${list.length} de ${eq.length}</span></div>`;
+  const body=list.map(r=>{
+    const m=r.e.mant||{};
+    const falt = r.faltante==null?'—':(r.faltante<0?('-'+nkm(-r.faltante)):nkm(r.faltante));
+    return `<tr data-id="${r.e.id}">
+      <td><b>${esc(r.e.patente)}</b></td>
+      <td class="mono">${nkm(r.kmAct)}</td>
+      <td class="mono">${nkm(m.ultimoKm)}${m.ultimaFecha?(' <span class="dias">· '+fmt(m.ultimaFecha)+'</span>'):''}</td>
+      <td class="mono">${nkm(r.prox)}</td>
+      <td><span class="badge m_${r.est}">${MANT_LABEL[r.est]}</span> <span class="dias">${falt!=='—'?falt+' km':''}</span></td>
+      <td>${esc(m.lugar||'')}</td></tr>`;
+  }).join('');
+  $('#view').innerHTML=filters+(list.length?`<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Km actual</th><th>Última mantención</th><th>Próxima (km)</th><th>Faltan</th><th>Lugar</th></tr></thead><tbody>${body}</tbody></table></div>`:`<div class="tablewrap"><div class="empty">Sin resultados.</div></div>`);
+
+  const q=$('#mtq'); if(q) q.oninput=()=>{MANT.q=q.value;const p=q.selectionStart;renderMantencion();const n=$('#mtq');n.focus();n.setSelectionRange(p,p);};
+  const s=$('#mtestado'); if(s){s.value=MANT.estado;s.onchange=()=>{MANT.estado=s.value;renderMantencion();};}
+  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>openMantDetail(tr.dataset.id));
+}
+function openMantDetail(id){
+  const e=DB.equipos.find(x=>x.id===id); if(!e) return;
+  MANT_ID=id; $('#mtTitle').textContent=e.patente+' · Mantención';
+  renderMantBody(); $('#mantOverlay').classList.add('open');
+}
+function renderMantBody(){
+  const e=DB.equipos.find(x=>x.id===MANT_ID); if(!e) return;
+  e.mant=e.mant||{historial:[]}; const m=e.mant; const ev=evalMant(e);
+  const hist=(m.historial||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  $('#mtBody').innerHTML=`
+    <div class="mantsumm">
+      <div><span class="l">Km actual</span><b>${nkm(ev.kmAct)}</b></div>
+      <div><span class="l">Próxima mantención</span><b>${nkm(ev.prox)} km</b></div>
+      <div><span class="l">Faltan</span><b class="m_${ev.est}txt">${ev.faltante==null?'—':(ev.faltante<0?('-'+nkm(-ev.faltante)):nkm(ev.faltante))+' km'}</b></div>
+      <div><span class="l">Estado</span>${'<span class="badge m_'+ev.est+'">'+MANT_LABEL[ev.est]+'</span>'}</div>
+    </div>
+    <div class="formgrid" style="margin-top:6px">
+      <div class="field"><label>Km actual</label><input class="input" id="mt_km" value="${esc(e.km||'')}"></div>
+      <div class="field"><label>Intervalo (km)</label><input class="input" id="mt_inter" value="${esc(m.intervalo||'')}" placeholder="${(DB.mantConfig&&DB.mantConfig.intervaloDefault)||50000}"></div>
+      <div class="field"><label>Último km mantención</label><input class="input" id="mt_ultkm" value="${esc(m.ultimoKm||'')}"></div>
+      <div class="field"><label>Fecha última</label><input type="date" class="input" id="mt_ultfec" value="${esc(m.ultimaFecha||'')}"></div>
+    </div>
+
+    <div class="section-title">Registrar mantención realizada</div>
+    <div class="formgrid">
+      <div class="field"><label>Fecha</label><input type="date" class="input" id="mn_fecha" value="${toISO(today0())}"></div>
+      <div class="field"><label>Kilometraje</label><input class="input" id="mn_km" value="${esc(e.km||'')}"></div>
+      <div class="field"><label>Lugar</label><input class="input" id="mn_lugar" value="${esc(m.lugar||'')}"></div>
+      <div class="field"><label>Tipo</label><input class="input" id="mn_tipo" value="${esc(m.tipo||'')}"></div>
+    </div>
+    <div class="field" style="margin-top:6px"><label>Observación</label><input class="input" id="mn_obs"></div>
+    <button class="btn primary" id="mn_save" style="margin-top:10px">Registrar mantención</button>
+
+    <div class="section-title">Historial (${hist.length})</div>
+    <div class="histlist">${hist.length?hist.map(h=>`<div class="histrow"><div><b>${fmt(h.fecha)}</b> · ${nkm(h.km)} km${h.lugar?(' · '+esc(h.lugar)):''}${h.tipo?(' · '+esc(h.tipo)):''}</div>${h.obs?('<div class="hint">'+esc(h.obs)+'</div>'):''}</div>`).join(''):'<div class="hint">Sin mantenciones registradas.</div>'}</div>`;
+
+  $('#mt_km').onchange=()=>{e.km=$('#mt_km').value.trim(); save(); renderMantBody(); render();};
+  $('#mt_inter').onchange=()=>{m.intervalo=intKm($('#mt_inter').value); save(); renderMantBody(); render();};
+  $('#mt_ultkm').onchange=()=>{m.ultimoKm=intKm($('#mt_ultkm').value); save(); renderMantBody(); render();};
+  $('#mt_ultfec').onchange=()=>{m.ultimaFecha=$('#mt_ultfec').value||null; save(); renderMantBody();};
+  $('#mn_save').onclick=registrarMantencion;
+}
+function registrarMantencion(){
+  const e=DB.equipos.find(x=>x.id===MANT_ID); if(!e) return; e.mant=e.mant||{historial:[]};
+  const km=intKm($('#mn_km').value), fecha=$('#mn_fecha').value||toISO(today0());
+  const h={id:uid(),fecha,km,lugar:$('#mn_lugar').value.trim(),tipo:$('#mn_tipo').value.trim(),obs:$('#mn_obs').value.trim()};
+  e.mant.historial=e.mant.historial||[]; e.mant.historial.push(h);
+  if(km!=null){ e.mant.ultimoKm=km; e.km=String(km); }
+  e.mant.ultimaFecha=fecha; if(h.lugar) e.mant.lugar=h.lugar; if(h.tipo) e.mant.tipo=h.tipo;
+  save(); renderMantBody(); render(); toast('Mantención registrada','ok');
 }
 
 /* ---------- Estado de la flota (operativo) ---------- */
@@ -755,6 +877,12 @@ function renderConfig(){
           <button class="btn danger sm ck-del">Quitar</button></div>`).join('')}
         <div style="margin:6px 0 12px"><button class="btn sm ck-add" data-tipo="${tp}">+ Agregar a ${tit.toLowerCase()}</button></div>`).join('')}
     </div>`;
+  const mc=DB.mantConfig||{intervaloDefault:50000,avisoKm:5000};
+  html += `<div class="cfgcard"><h3>Mantención</h3>
+      <p class="hint" style="margin-top:0">Valores por defecto para el cálculo de la próxima mantención.</p>
+      <div class="cfgrow" style="grid-template-columns:1fr 130px"><div>Intervalo por defecto (km)</div><input class="input mono" id="mcInter" type="number" min="0" value="${mc.intervaloDefault}"></div>
+      <div class="cfgrow" style="grid-template-columns:1fr 130px"><div>Avisar cuando falten (km)</div><input class="input mono" id="mcAviso" type="number" min="0" value="${mc.avisoKm}"></div>
+    </div>`;
   html += `<div class="cfgcard"><h3>Datos</h3>
       <p class="hint" style="margin-top:0">La app guarda todo en la nube (y una copia en este navegador). Exporta un respaldo cuando quieras.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -775,6 +903,8 @@ function renderConfig(){
   $$('.ck-precio').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const it=itemsFor(row.dataset.tipo).find(i=>i.id===row.dataset.id); if(it){it.precio=parseInt(inp.value,10)||0; save();} });
   $$('.ck-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); const tp=row.dataset.tipo; DB.checklistItems[tp]=itemsFor(tp).filter(i=>i.id!==row.dataset.id); save(); renderConfig(); });
   $$('.ck-add').forEach(b=> b.onclick=()=>{ const tp=b.dataset.tipo; const n=prompt('Nombre del item:'); if(!n) return; DB.checklistItems[tp]=DB.checklistItems[tp]||[]; DB.checklistItems[tp].push({id:tp[0]+Math.random().toString(36).slice(2,6),nombre:n.trim(),precio:0}); save(); renderConfig(); });
+  const mci=$('#mcInter'); if(mci) mci.onchange=()=>{ DB.mantConfig=DB.mantConfig||{}; DB.mantConfig.intervaloDefault=parseInt(mci.value,10)||50000; save(); };
+  const mca=$('#mcAviso'); if(mca) mca.onchange=()=>{ DB.mantConfig=DB.mantConfig||{}; DB.mantConfig.avisoKm=parseInt(mca.value,10)||5000; save(); };
   $('#cfgReset').onclick=()=>{ if(confirm('Esto reemplaza tus datos actuales por la flota original importada. ¿Continuar?')) resetSeed(); };
   $('#cfgWipe').onclick=()=>{ if(confirm('¿Borrar TODOS los datos de este navegador? No se puede deshacer.')){ DB={docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; save(); render(); toast('Datos borrados','ok'); } };
 }
@@ -996,9 +1126,12 @@ function wireEvents(){
   $('#flClose').onclick=()=>$('#flotaOverlay').classList.remove('open');
   $('#flCloseBtn').onclick=()=>$('#flotaOverlay').classList.remove('open');
   $('#flotaOverlay').onclick=e=>{ if(e.target.id==='flotaOverlay') e.currentTarget.classList.remove('open'); };
+  $('#mtClose').onclick=()=>$('#mantOverlay').classList.remove('open');
+  $('#mtCloseBtn').onclick=()=>$('#mantOverlay').classList.remove('open');
+  $('#mantOverlay').onclick=e=>{ if(e.target.id==='mantOverlay') e.currentTarget.classList.remove('open'); };
   const lf=$('#loginForm'); if(lf) lf.onsubmit=doLogin;
   const lo=$('#btnLogout'); if(lo) lo.onclick=async ()=>{ if(CLOUD.sb){ try{ await CLOUD.sb.auth.signOut(); }catch(e){} } location.reload(); };
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); $('#flotaOverlay').classList.remove('open'); } });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); $('#flotaOverlay').classList.remove('open'); $('#mantOverlay').classList.remove('open'); } });
 }
 
 /* ---------- arranque ---------- */

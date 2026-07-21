@@ -11,7 +11,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristhofer Miguel Maturana Tapia"
+   "conductor": "Cristhofer Miguel Maturana Tapia",
+   "km": "8805"
   },
   {
    "patente": "VYSP-70",
@@ -24,7 +25,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mauricio Zapata Sandoval"
+   "conductor": "Mauricio Zapata Sandoval",
+   "km": "3774"
   },
   {
    "patente": "PPVH-89",
@@ -75,7 +77,16 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "mant": {
+    "ultimoKm": 898683,
+    "ultimaFecha": "2026-01-29",
+    "intervalo": 60000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "943260"
   },
   {
    "patente": "RJYD-98",
@@ -127,7 +138,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Carlos Alberto Bernal Herrera"
+   "conductor": "Carlos Alberto Bernal Herrera",
+   "mant": {
+    "ultimoKm": 491268,
+    "ultimaFecha": "2026-06-11",
+    "intervalo": 50000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "509758"
   },
   {
    "patente": "RJYD-95",
@@ -179,7 +199,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Alejandro Remedy Vega"
+   "conductor": "Alejandro Remedy Vega",
+   "mant": {
+    "ultimoKm": 736057,
+    "ultimaFecha": "2026-04-20",
+    "intervalo": 55000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "777130"
   },
   {
    "patente": "THYX-54",
@@ -231,7 +260,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Héctor Mauricio Navarrete Ramiroz"
+   "conductor": "Héctor Mauricio Navarrete Ramiroz",
+   "mant": {
+    "ultimoKm": 443576,
+    "ultimaFecha": "2026-07-09",
+    "intervalo": 39564,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "446830"
   },
   {
    "patente": "TRVD-99",
@@ -283,7 +321,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristopher Leroy Donaire Gutierrez"
+   "conductor": "Cristopher Leroy Donaire Gutierrez",
+   "mant": {
+    "ultimoKm": 322170,
+    "ultimaFecha": "2026-06-01",
+    "intervalo": 39070,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "344651"
   },
   {
    "patente": "RJYD-96",
@@ -382,7 +429,16 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "mant": {
+    "ultimoKm": 446534,
+    "ultimaFecha": "2026-05-15",
+    "intervalo": 48116,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "473977"
   },
   {
    "patente": "TRVD-98",
@@ -434,7 +490,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Luis Cristopher Adones Muñoz"
+   "conductor": "Luis Cristopher Adones Muñoz",
+   "mant": {
+    "ultimoKm": 359951,
+    "ultimaFecha": "2026-07-10",
+    "intervalo": 39959,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "361624"
   },
   {
    "patente": "TRVF-10",
@@ -486,7 +551,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Esteban Mauricio Fantini Reyes"
+   "conductor": "Esteban Mauricio Fantini Reyes",
+   "mant": {
+    "ultimoKm": 328033,
+    "ultimaFecha": "2026-05-20",
+    "intervalo": 39607,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "359542"
   },
   {
    "patente": "THYX-52",
@@ -534,7 +608,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Victor Manuel Campos Rojas"
+   "conductor": "Victor Manuel Campos Rojas",
+   "mant": {
+    "ultimoKm": 413659,
+    "ultimaFecha": "2026-04-23",
+    "intervalo": 49761,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "433478"
   },
   {
    "patente": "SHJK-64",
@@ -586,7 +669,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Emmanuel Horacio Delgado Cordova"
+   "conductor": "Emmanuel Horacio Delgado Cordova",
+   "mant": {
+    "ultimoKm": 607197,
+    "ultimaFecha": "2026-06-01",
+    "intervalo": 54803,
+    "lugar": "SITIO",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "629094"
   },
   {
    "patente": "THYX-58",
@@ -638,7 +730,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Matias Gutierrez Robles"
+   "conductor": "Matias Gutierrez Robles",
+   "mant": {
+    "ultimoKm": 397620,
+    "ultimaFecha": "2026-06-12",
+    "intervalo": 39850,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "412705"
   },
   {
    "patente": "THYX-61",
@@ -690,7 +791,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Diego Andres Toro Olguin"
+   "conductor": "Diego Andres Toro Olguin",
+   "mant": {
+    "ultimoKm": 415012,
+    "ultimaFecha": "2026-04-24",
+    "intervalo": 49508,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "453844"
   },
   {
    "patente": "SHGR-85",
@@ -737,7 +847,16 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "mant": {
+    "ultimoKm": 564145,
+    "ultimaFecha": "2025-11-19",
+    "intervalo": 55855,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "615580"
   },
   {
    "patente": "VVRK-20",
@@ -786,7 +905,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Carlos Christian Fierro Rocha"
+   "conductor": "Carlos Christian Fierro Rocha",
+   "mant": {
+    "ultimoKm": 54311,
+    "ultimaFecha": "2026-06-26",
+    "intervalo": 45689,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "64178"
   },
   {
    "patente": "VVRK-22",
@@ -835,7 +963,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mario Ramos Ramos"
+   "conductor": "Mario Ramos Ramos",
+   "mant": {
+    "ultimoKm": 51397,
+    "ultimaFecha": "2026-06-23",
+    "intervalo": 50000,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "64733"
   },
   {
    "patente": "VVRK-21",
@@ -880,7 +1017,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jesus David Donoso Leon"
+   "conductor": "Jesus David Donoso Leon",
+   "mant": {
+    "ultimoKm": 54134,
+    "ultimaFecha": "2026-06-26",
+    "intervalo": 45866,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "65855"
   },
   {
    "patente": "VVRK-26",
@@ -929,7 +1075,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Francisco Garcia Lopez"
+   "conductor": "Francisco Garcia Lopez",
+   "mant": {
+    "ultimoKm": 49293,
+    "ultimaFecha": "2026-06-26",
+    "intervalo": 50707,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "60064"
   },
   {
    "patente": "VVRK-27",
@@ -974,7 +1129,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Camilo Mendoza González"
+   "conductor": "Camilo Mendoza González",
+   "mant": {
+    "ultimoKm": 49478,
+    "ultimaFecha": "2026-06-10",
+    "intervalo": 50522,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "64321"
   },
   {
    "patente": "VVRK-23",
@@ -1019,7 +1183,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Luis Reinaldo Urbina Vasquez"
+   "conductor": "Luis Reinaldo Urbina Vasquez",
+   "mant": {
+    "ultimoKm": 24551,
+    "ultimaFecha": "2026-06-26",
+    "intervalo": 25449,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "32665"
   },
   {
    "patente": "VVRK-24",
@@ -1068,7 +1241,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Manuel David Tapia Balbontin"
+   "conductor": "Manuel David Tapia Balbontin",
+   "mant": {
+    "ultimoKm": 50148,
+    "ultimaFecha": "2026-06-30",
+    "intervalo": 49852,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "58725"
   },
   {
    "patente": "VVRK-25",
@@ -1113,7 +1295,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "David Mora Lobos"
+   "conductor": "David Mora Lobos",
+   "mant": {
+    "ultimoKm": 50154,
+    "ultimaFecha": "2026-06-16",
+    "intervalo": 50000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "66829"
   },
   {
    "patente": "VLSV-42",
@@ -1165,7 +1356,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Victor Pizarro Maldonado"
+   "conductor": "Victor Pizarro Maldonado",
+   "mant": {
+    "ultimoKm": 102720,
+    "ultimaFecha": "2026-04-28",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "149871"
   },
   {
    "patente": "VLTC-51",
@@ -1217,7 +1417,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristian Felipe Tapia Tapia"
+   "conductor": "Cristian Felipe Tapia Tapia",
+   "mant": {
+    "ultimoKm": 131504,
+    "ultimaFecha": "2026-05-15",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "161636"
   },
   {
    "patente": "VLSS-89",
@@ -1269,7 +1478,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Alexis Michell Alegria Diaz"
+   "conductor": "Alexis Michell Alegria Diaz",
+   "mant": {
+    "ultimoKm": 129378,
+    "ultimaFecha": "2026-06-05",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "154605"
   },
   {
    "patente": "VLSV-12",
@@ -1321,7 +1539,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jose Miguel Valenzuela Guajardo"
+   "conductor": "Jose Miguel Valenzuela Guajardo",
+   "mant": {
+    "ultimoKm": 132186,
+    "ultimaFecha": "2026-05-27",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "163657"
   },
   {
    "patente": "PPVH-92",
@@ -1373,7 +1600,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Sergio Enrique Concha Valle"
+   "conductor": "Sergio Enrique Concha Valle",
+   "mant": {
+    "ultimoKm": 907716,
+    "ultimaFecha": "2026-04-17",
+    "intervalo": 55000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "928521"
   },
   {
    "patente": "RJYD-93",
@@ -1425,7 +1661,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Camilo Mendoza González"
+   "conductor": "Camilo Mendoza González",
+   "mant": {
+    "ultimoKm": 548241,
+    "ultimaFecha": "2026-03-14",
+    "intervalo": 60000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "574818"
   },
   {
    "patente": "RJXD-10",
@@ -1476,6 +1721,14 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
+   },
+   "mant": {
+    "ultimoKm": 815119,
+    "ultimaFecha": "2026-05-27",
+    "intervalo": 44881,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
    }
   },
   {
@@ -1528,7 +1781,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Claudio Esteban Valencia Pasten"
+   "conductor": "Claudio Esteban Valencia Pasten",
+   "mant": {
+    "ultimoKm": 353898,
+    "ultimaFecha": "2026-06-26",
+    "intervalo": 37882,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "364333"
   },
   {
    "patente": "SHGR-66",
@@ -1580,7 +1842,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Victor Manuel Campos Rojas"
+   "conductor": "Victor Manuel Campos Rojas",
+   "mant": {
+    "ultimoKm": 520213,
+    "ultimaFecha": "2026-01-08",
+    "intervalo": 60000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "577862"
   },
   {
    "patente": "SHGR-56",
@@ -1632,7 +1903,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Esteban Valenzuela Morales"
+   "conductor": "Esteban Valenzuela Morales",
+   "mant": {
+    "ultimoKm": 356074,
+    "ultimaFecha": "2026-06-22",
+    "intervalo": 53926,
+    "lugar": "SITIO",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "368082"
   },
   {
    "patente": "TVBD-32",
@@ -1684,7 +1964,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "David Hernandez Orrego"
+   "conductor": "David Hernandez Orrego",
+   "mant": {
+    "ultimoKm": 306334,
+    "ultimaFecha": "2026-04-15",
+    "intervalo": 49876,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "351893"
   },
   {
    "patente": "VHSG-68",
@@ -1729,7 +2018,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Javier Rosas Sandoval"
+   "conductor": "Javier Rosas Sandoval",
+   "mant": {
+    "ultimoKm": null,
+    "ultimaFecha": null,
+    "intervalo": null,
+    "lugar": "",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "37531"
   },
   {
    "patente": "VPVY-29",
@@ -1781,7 +2079,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristian Rodrigo Ormazabal Herrera"
+   "conductor": "Cristian Rodrigo Ormazabal Herrera",
+   "mant": {
+    "ultimoKm": 105744,
+    "ultimaFecha": "2026-05-18",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "139215"
   },
   {
    "patente": "RJXD-13",
@@ -1833,7 +2140,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jaime Jorge Diaz Gonzalez"
+   "conductor": "Jaime Jorge Diaz Gonzalez",
+   "mant": {
+    "ultimoKm": 654850,
+    "ultimaFecha": "2026-03-28",
+    "intervalo": 60000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "697898"
   },
   {
    "patente": "VPWC-70",
@@ -1885,7 +2201,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Ángel Minto Miranda Pereira"
+   "conductor": "Ángel Minto Miranda Pereira",
+   "mant": {
+    "ultimoKm": 140191,
+    "ultimaFecha": "2026-07-08",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "KILOMETRAJE",
+    "historial": []
+   },
+   "km": "143727"
   },
   {
    "patente": "VPVY-66",
@@ -1937,7 +2262,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Rene Alberto Morales Robles"
+   "conductor": "Rene Alberto Morales Robles",
+   "mant": {
+    "ultimoKm": 130212,
+    "ultimaFecha": "2026-07-06",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "133478"
   },
   {
    "patente": "VPVY-25",
@@ -1989,7 +2323,16 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mario Enrique Remedy Perez"
+   "conductor": "Mario Enrique Remedy Perez",
+   "mant": {
+    "ultimoKm": 126571,
+    "ultimaFecha": "2026-07-10",
+    "intervalo": 40000,
+    "lugar": "SCANIA",
+    "tipo": "",
+    "historial": []
+   },
+   "km": "127922"
   },
   {
    "patente": "VYSP-66",
@@ -2034,7 +2377,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Arnoldo Collao Valle"
+   "conductor": "Arnoldo Collao Valle",
+   "km": "10329"
   },
   {
    "patente": "VYSP-67",
@@ -2079,7 +2423,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Pablo Vega Soto"
+   "conductor": "Pablo Vega Soto",
+   "km": "7895"
   },
   {
    "patente": "VYSP-63",
@@ -2124,7 +2469,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Deni Luis Valenzuela Tabilo"
+   "conductor": "Deni Luis Valenzuela Tabilo",
+   "km": "11545"
   },
   {
    "patente": "VYSP-69",
@@ -2169,7 +2515,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Roberto Alejandro Naranjo Quijada"
+   "conductor": "Roberto Alejandro Naranjo Quijada",
+   "km": "10467"
   },
   {
    "patente": "PPVH-87",
@@ -2220,6 +2567,14 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
+   },
+   "mant": {
+    "ultimoKm": 879917,
+    "ultimaFecha": "2025-11-20",
+    "intervalo": 55000,
+    "lugar": "SITIO",
+    "tipo": "",
+    "historial": []
    }
   },
   {
@@ -2256,7 +2611,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "395696"
   },
   {
    "patente": "PXDH-31",
@@ -2293,7 +2649,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Luis Cristopher Adones Muñoz"
+   "conductor": "Luis Cristopher Adones Muñoz",
+   "km": "311390"
   },
   {
    "patente": "PXDH-30",
@@ -2330,7 +2687,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Luis Reinaldo Urbina Vasquez"
+   "conductor": "Luis Reinaldo Urbina Vasquez",
+   "km": "330265"
   },
   {
    "patente": "PXDH-34",
@@ -2366,7 +2724,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "286454"
   },
   {
    "patente": "PXDH-32",
@@ -2403,7 +2762,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mario Ramos Ramos"
+   "conductor": "Mario Ramos Ramos",
+   "km": "332492"
   },
   {
    "patente": "KYRG-33",
@@ -2440,7 +2800,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Claudio Esteban Valencia Pasten"
+   "conductor": "Claudio Esteban Valencia Pasten",
+   "km": "426164"
   },
   {
    "patente": "PTXZ-71",
@@ -2510,7 +2871,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Deni Luis Valenzuela Tabilo"
+   "conductor": "Deni Luis Valenzuela Tabilo",
+   "km": "401610"
   },
   {
    "patente": "KYRF-17",
@@ -2547,7 +2909,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Pablo Vega Soto"
+   "conductor": "Pablo Vega Soto",
+   "km": "446127"
   },
   {
    "patente": "KYRF-23",
@@ -2584,7 +2947,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mario Enrique Remedy Perez"
+   "conductor": "Mario Enrique Remedy Perez",
+   "km": "1301375"
   },
   {
    "patente": "KYRG-36",
@@ -2621,7 +2985,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Esteban Valenzuela Morales"
+   "conductor": "Esteban Valenzuela Morales",
+   "km": "465332"
   },
   {
    "patente": "PXHX-13",
@@ -2658,7 +3023,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mauricio Zapata Sandoval"
+   "conductor": "Mauricio Zapata Sandoval",
+   "km": "114309"
   },
   {
    "patente": "KYRF-18",
@@ -2695,7 +3061,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Alexis Michell Alegria Diaz"
+   "conductor": "Alexis Michell Alegria Diaz",
+   "km": "479089"
   },
   {
    "patente": "PXDH-33",
@@ -2769,7 +3136,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Rene Alberto Morales Robles"
+   "conductor": "Rene Alberto Morales Robles",
+   "km": "314627"
   },
   {
    "patente": "KYRF-20",
@@ -2806,7 +3174,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Sergio Enrique Concha Valle"
+   "conductor": "Sergio Enrique Concha Valle",
+   "km": "333563"
   },
   {
    "patente": "KYPJ-32",
@@ -2879,7 +3248,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Héctor Mauricio Navarrete Ramiroz"
+   "conductor": "Héctor Mauricio Navarrete Ramiroz",
+   "km": "436396"
   },
   {
    "patente": "JWPT-47",
@@ -2916,7 +3286,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Manuel David Tapia Balbontin"
+   "conductor": "Manuel David Tapia Balbontin",
+   "km": "438458"
   },
   {
    "patente": "KYRG-32",
@@ -2953,7 +3324,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Mario Ramos Ramos"
+   "conductor": "Mario Ramos Ramos",
+   "km": "421978"
   },
   {
    "patente": "KYRG-38",
@@ -2990,7 +3362,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Victor Pizarro Maldonado"
+   "conductor": "Victor Pizarro Maldonado",
+   "km": "397477"
   },
   {
    "patente": "PWSC-63",
@@ -3027,7 +3400,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Pablo Vega Soto"
+   "conductor": "Pablo Vega Soto",
+   "km": "496072"
   },
   {
    "patente": "KYRF-25",
@@ -3064,7 +3438,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Matias Gutierrez Robles"
+   "conductor": "Matias Gutierrez Robles",
+   "km": "389820"
   },
   {
    "patente": "PWVF-70",
@@ -3101,7 +3476,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristopher Leroy Donaire Gutierrez"
+   "conductor": "Cristopher Leroy Donaire Gutierrez",
+   "km": "84866"
   },
   {
    "patente": "KYRF-19",
@@ -3138,7 +3514,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jesus David Donoso Leon"
+   "conductor": "Jesus David Donoso Leon",
+   "km": "333987"
   },
   {
    "patente": "KYRF-24",
@@ -3210,7 +3587,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "354232"
   },
   {
    "patente": "KYRG-34",
@@ -3247,7 +3625,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Manuel David Tapia Balbontin"
+   "conductor": "Manuel David Tapia Balbontin",
+   "km": "406819"
   },
   {
    "patente": "PXHX-18",
@@ -3357,7 +3736,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Alejandro Remedy Vega"
+   "conductor": "Alejandro Remedy Vega",
+   "km": "363780"
   },
   {
    "patente": "PXDJ-14",
@@ -3394,7 +3774,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Sergio Enrique Concha Valle"
+   "conductor": "Sergio Enrique Concha Valle",
+   "km": "215938"
   },
   {
    "patente": "PWSC-69",
@@ -3430,7 +3811,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "457240"
   },
   {
    "patente": "PXDJ-13",
@@ -3467,7 +3849,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jaime Jorge Diaz Gonzalez"
+   "conductor": "Jaime Jorge Diaz Gonzalez",
+   "km": "301899"
   },
   {
    "patente": "PXFT-56",
@@ -3503,7 +3886,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "1355324"
   },
   {
    "patente": "KYRB-93",
@@ -3537,7 +3921,8 @@ window.SEED = {
      "vence": "2026-11-27"
     }
    },
-   "conductor": "David Mora Lobos"
+   "conductor": "David Mora Lobos",
+   "km": "311708"
   },
   {
    "patente": "PXFT-57",
@@ -3574,7 +3959,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Carlos Jose Bianchi Elguin"
+   "conductor": "Carlos Jose Bianchi Elguin",
+   "km": "299909"
   },
   {
    "patente": "PXFT-55",
@@ -3611,7 +3997,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Carlos Christian Fierro Rocha"
+   "conductor": "Carlos Christian Fierro Rocha",
+   "km": "279347"
   },
   {
    "patente": "PWSC-64",
@@ -3648,7 +4035,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Roberto Alejandro Naranjo Quijada"
+   "conductor": "Roberto Alejandro Naranjo Quijada",
+   "km": "270223"
   },
   {
    "patente": "JWPT-49",
@@ -3685,7 +4073,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Esteban Mauricio Fantini Reyes"
+   "conductor": "Esteban Mauricio Fantini Reyes",
+   "km": "427331"
   },
   {
    "patente": "PXPG-42",
@@ -3719,7 +4108,8 @@ window.SEED = {
      "vence": "2026-10-22"
     }
    },
-   "conductor": "Sergio Enrique Concha Valle"
+   "conductor": "Sergio Enrique Concha Valle",
+   "km": "32116"
   },
   {
    "patente": "PXPG-41",
@@ -3753,7 +4143,8 @@ window.SEED = {
      "vence": "2026-12-10"
     }
    },
-   "conductor": "Camilo Mendoza González"
+   "conductor": "Camilo Mendoza González",
+   "km": "32169"
   },
   {
    "patente": "PWSC-68",
@@ -3790,7 +4181,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Ángel Minto Miranda Pereira"
+   "conductor": "Ángel Minto Miranda Pereira",
+   "km": "1929663"
   },
   {
    "patente": "KYPJ-36",
@@ -3863,7 +4255,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristian Rodrigo Ormazabal Herrera"
+   "conductor": "Cristian Rodrigo Ormazabal Herrera",
+   "km": "160289"
   },
   {
    "patente": "PXDJ-12",
@@ -3900,7 +4293,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Carlos Alberto Bernal Herrera"
+   "conductor": "Carlos Alberto Bernal Herrera",
+   "km": "272280"
   },
   {
    "patente": "PWSC-71",
@@ -3936,7 +4330,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "km": "208127"
   },
   {
    "patente": "PWSC-66",
@@ -3973,7 +4368,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Francisco Garcia Lopez"
+   "conductor": "Francisco Garcia Lopez",
+   "km": "440682"
   },
   {
    "patente": "KYRG-35",
@@ -4010,7 +4406,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Arnoldo Collao Valle"
+   "conductor": "Arnoldo Collao Valle",
+   "km": "438820"
   },
   {
    "patente": "PXHX-15",
@@ -4047,7 +4444,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jesus David Donoso Leon"
+   "conductor": "Jesus David Donoso Leon",
+   "km": "129317"
   },
   {
    "patente": "PWSC-67",
@@ -4084,7 +4482,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Jose Miguel Valenzuela Guajardo"
+   "conductor": "Jose Miguel Valenzuela Guajardo",
+   "km": "433543"
   },
   {
    "patente": "PXHX-17",
@@ -4121,7 +4520,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Pablo Vega Soto"
+   "conductor": "Pablo Vega Soto",
+   "km": "133797"
   },
   {
    "patente": "KYRB-94",
@@ -4158,7 +4558,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Cristian Felipe Tapia Tapia"
+   "conductor": "Cristian Felipe Tapia Tapia",
+   "km": "443697"
   },
   {
    "patente": "JWPT-48",
@@ -4195,7 +4596,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Victor Manuel Campos Rojas"
+   "conductor": "Victor Manuel Campos Rojas",
+   "km": "396146"
   },
   {
    "patente": "PWSC-72",
@@ -4232,7 +4634,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Javier Rosas Sandoval"
+   "conductor": "Javier Rosas Sandoval",
+   "km": "368657"
   },
   {
    "patente": "PXHX-16",
@@ -4269,7 +4672,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Emmanuel Horacio Delgado Cordova"
+   "conductor": "Emmanuel Horacio Delgado Cordova",
+   "km": "93145"
   },
   {
    "patente": "PWSC-70",
@@ -4306,7 +4710,8 @@ window.SEED = {
      "cumple": true
     }
    },
-   "conductor": "Diego Andres Toro Olguin"
+   "conductor": "Diego Andres Toro Olguin",
+   "km": "470895"
   }
  ],
  "personas": [],
