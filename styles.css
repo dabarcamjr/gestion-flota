@@ -172,6 +172,11 @@ td .sdot{margin:0 auto;display:block}
 .badge.op_en_patio{background:var(--green-bg);color:var(--green)}
 .badge.op_en_taller{background:var(--amber-bg);color:var(--amber)}
 .cfgrow.ck{grid-template-columns:1fr auto}
+.cfgrow.ck2{grid-template-columns:1fr 110px auto}
+.mvtable{min-width:520px;font-size:13px}
+.mvtable th,.mvtable td{padding:6px 8px;white-space:nowrap}
+.mvtable .input{padding:5px 7px}
+.mvtable tfoot td{background:var(--card-2)}
 .ckrow{display:grid;grid-template-columns:1fr 70px 1.3fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .ckrow:last-child{border-bottom:0}
 .ckname{font-size:13.5px}

@@ -153,8 +153,7 @@ function migrate(){
     DB.schemaVersion = 5;
   }
   if(v<6){
-    // módulo Estado de flota: conductor, estado operativo, notas, movimientos + items de checklist
-    if(!DB.checklistItems) DB.checklistItems = defaultChecklistItems();
+    // módulo Estado de flota: conductor, estado operativo, notas, movimientos
     const seedEq=(window.SEED&&window.SEED.equipos)||[];
     const byPat={}; seedEq.forEach(e=> byPat[normNom(e.patente)]=e);
     DB.equipos.forEach(e=>{
@@ -165,13 +164,38 @@ function migrate(){
     });
     DB.schemaVersion = 6;
   }
+  if(v<7){
+    // checklist real valorizado (por tipo) + posiciones de neumáticos + folios
+    DB.checklistItems = defaultChecklistItems();
+    DB.neumaticoPos = defaultNeumaticoPos();
+    DB.folioSeq = DB.folioSeq || { tracto:1046, rampla:458 };
+    DB.schemaVersion = 7;
+  }
 }
 function defaultChecklistItems(){
-  return ['Documentos del equipo','Extintor','Botiquín','Triángulos / conos','Llave de rueda','Gata',
-          'Chaleco reflectante','Neumático de repuesto','GPS','Cuñas','Estado carrocería / limpieza']
-    .map((n,i)=>({id:'ck'+(i+1), nombre:n}));
+  return {
+    tracto:[
+      ['Radio musical',80000],['Tacógrafo',500000],['Llave de rueda',8100],['Barrote',8100],['Gata',28800],
+      ['Triángulo',10000],['Botiquín',14000],['Baliza azul / ámbar',15000],['Cuñas',8075],['Conos',7000],
+      ['Extintor',29700],['Pértiga',30000],['Colchón',118860],['Eslingas',3357],['Chicharras',3357],
+      ['Cubrecantos',671],['Candado',0],['Tarjeta TCT / Romana / NeoTac',0],['Dispositivos antirrobo',0]
+    ].map((x,i)=>({id:'t'+(i+1),nombre:x[0],precio:x[1]})),
+    rampla:[
+      ['Cuerda',41360],['Carpa (8x10)',206015],['Poncho (4x16)',102400],['Eslingas (9mts)',3357],['Chicharras',3357],
+      ['Canoas',2400],['Rueda de repuesto',168000],['Nylon',6296],['Precinto',10000],['Cubrecanto',671],
+      ['Cadenas',35160],['Trinquetes',22800],['Cuerda de vida',80000],['Extintor',35100],['Candados',1500]
+    ].map((x,i)=>({id:'r'+(i+1),nombre:x[0],precio:x[1]}))
+  };
 }
+function defaultNeumaticoPos(){
+  return { tracto:['1','2','3','4','5','6','7','8','9','10'],
+           rampla:['11','12','13','14','15','16','17','18','19','20','21','22','23R','24R'] };
+}
+function itemsFor(tipo){ const c=DB.checklistItems; return (c && c[tipo]) ? c[tipo] : []; }
+function money(n){ n=Number(n)||0; return '$'+n.toLocaleString('es-CL'); }
 const OP_LABEL={ en_ruta:'En ruta', en_patio:'En patio', en_taller:'En taller' };
+const NEU_EST=['','B','N','R','D','M','RE'];
+const NEU_LABEL={B:'Bueno',N:'Nuevo',R:'Regular',D:'Deforme',M:'Malo',RE:'Reparar'};
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
 
 /* ---------- clientes / requisitos ---------- */
@@ -277,9 +301,11 @@ function openFlotaDetail(id){
   renderFlotaBody();
   $('#flotaOverlay').classList.add('open');
 }
+function nextFolio(tipo){ const p=tipo==='tracto'?'F-':'R-'; const n=((DB.folioSeq&&DB.folioSeq[tipo])||0)+1; return p+n; }
 function renderFlotaBody(){
   const e=DB.equipos.find(x=>x.id===FLOTA_ID); if(!e) return;
-  const items=DB.checklistItems||[];
+  const items=itemsFor(e.tipo);
+  const pos=(DB.neumaticoPos&&DB.neumaticoPos[e.tipo])||[];
   const hist=(e.movimientos||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
   $('#flBody').innerHTML=`
     <div class="formgrid">
@@ -297,47 +323,132 @@ function renderFlotaBody(){
       <div class="field"><label>Tipo</label><select class="input" id="mv_tipo">
         <option value="entrega">Entrega (sale con conductor)</option>
         <option value="devolucion">Devolución (vuelve al patio)</option></select></div>
+      <div class="field"><label>N° Folio</label><input class="input" id="mv_folio" value="${esc(nextFolio(e.tipo))}"></div>
       <div class="field"><label>Fecha</label><input type="date" class="input" id="mv_fecha" value="${toISO(today0())}"></div>
       <div class="field"><label>Conductor</label><input class="input" id="mv_conductor" value="${esc(e.conductor||'')}"></div>
+      <div class="field"><label>Guardia</label><input class="input" id="mv_guardia"></div>
+      <div class="field"><label>Inspector / Jefe de patio</label><input class="input" id="mv_inspector"></div>
       <div class="field"><label>Kilometraje</label><input class="input" id="mv_km" value="${esc(e.km||'')}"></div>
     </div>
-    <div class="section-title" style="margin-top:8px">Checklist — qué lleva el equipo</div>
-    <div id="mv_items">${items.length?items.map(it=>`
-      <div class="ckrow"><span class="ckname">${esc(it.nombre)}</span>
-        <label class="ckok"><input type="checkbox" class="mv-ok" data-id="${it.id}" checked> OK</label>
-        <input class="input mv-obs" data-id="${it.id}" placeholder="observación (opcional)"></div>`).join('')
-      :'<span class="hint">Define items en Configuración.</span>'}</div>
-    <div class="field" style="margin-top:8px"><label>Observación general</label><input class="input" id="mv_obs"></div>
-    <button class="btn primary" id="mv_save" style="margin-top:10px">Registrar movimiento</button>
+    <div class="section-title" style="margin-top:8px">Inventario entregado — qué lleva el equipo</div>
+    <div class="tablewrap"><table class="mvtable"><thead><tr><th>Elemento</th><th>Precio</th><th>Cant.</th><th>Total</th><th>Devuelta</th><th>Observación</th></tr></thead>
+      <tbody id="mv_items">${items.length?items.map(it=>`<tr>
+        <td>${esc(it.nombre)}</td>
+        <td class="mono">${money(it.precio)}</td>
+        <td><input class="input mv-cant" data-id="${it.id}" data-precio="${it.precio}" type="number" min="0" style="width:64px"></td>
+        <td class="mono mv-tot" data-id="${it.id}">$0</td>
+        <td><input class="input mv-dev" data-id="${it.id}" type="number" min="0" style="width:64px"></td>
+        <td><input class="input mv-obs" data-id="${it.id}" placeholder="obs"></td></tr>`).join('')
+        :'<tr><td colspan="6" class="hint">Define items en Configuración.</td></tr>'}</tbody>
+      <tfoot><tr><td colspan="3" style="text-align:right"><b>Total avaluado</b></td><td class="mono" id="mv_grand"><b>$0</b></td><td colspan="2"></td></tr></tfoot>
+    </table></div>
+    <div class="section-title" style="margin-top:8px">Neumáticos <span class="hint">(B bueno · N nuevo · R regular · D deforme · M malo · RE reparar)</span></div>
+    <div class="tablewrap"><table class="mvtable" id="mv_neu"><thead><tr><th>Posición</th><th>Estado</th><th>Marca / Código</th></tr></thead><tbody>
+      ${pos.map(p=>`<tr><td><b>${esc(p)}</b></td><td><select class="input neu-est" data-pos="${esc(p)}">${NEU_EST.map(o=>`<option value="${o}">${o||'—'}</option>`).join('')}</select></td><td><input class="input neu-cod" data-pos="${esc(p)}"></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="field" style="margin-top:8px"><label>Observaciones generales</label><textarea class="input" id="mv_obs" rows="2" style="width:100%;resize:vertical"></textarea></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn primary" id="mv_save">Registrar movimiento</button>
+      <button class="btn" id="mv_print">🖨️ Imprimir para el conductor</button>
+    </div>
 
     <div class="section-title">Historial de movimientos (${hist.length})</div>
     <div class="histlist">${hist.length?hist.map(m=>{
-      const okc=m.items?Object.values(m.items).filter(x=>x.ok).length:0;
-      const tot=m.items?Object.keys(m.items).length:0;
-      const obs=Object.entries(m.items||{}).filter(([k,v])=>v.obs).map(([k,v])=>{const it=(DB.checklistItems||[]).find(i=>i.id===k);return (it?it.nombre:k)+': '+v.obs;});
+      const nOk=Object.keys(m.items||{}).length;
+      const obs=Object.entries(m.items||{}).filter(([k,v])=>v.obs).map(([k,v])=>{const it=(items||[]).find(i=>i.id===k);return (it?it.nombre:k)+': '+v.obs;});
       return `<div class="histrow">
-        <div><span class="movtag ${m.tipo}">${m.tipo==='entrega'?'Entrega':'Devolución'}</span> <b>${fmt(m.fecha)}</b> · ${esc(m.conductor||'—')}${m.km?(' · '+esc(m.km)+' km'):''}</div>
-        <div class="hint">Checklist ${okc}/${tot} OK${m.obs?(' · '+esc(m.obs)):''}${obs.length?(' · ⚠ '+esc(obs.join(' | '))):''}</div></div>`;
+        <div><span class="movtag ${m.tipo}">${m.tipo==='entrega'?'Entrega':'Devolución'}</span> ${m.folio?('<b>'+esc(m.folio)+'</b> · '):''}${fmt(m.fecha)} · ${esc(m.conductor||'—')}${m.km?(' · '+esc(m.km)+' km'):''}</div>
+        <div class="hint">${nOk} ítems${m.obs?(' · '+esc(m.obs)):''}${obs.length?(' · ⚠ '+esc(obs.join(' | '))):''} <a href="#" class="reprint" data-mid="${m.id}">🖨️ reimprimir</a></div></div>`;
     }).join(''):'<div class="hint">Sin movimientos registrados aún.</div>'}</div>`;
 
   $('#fl_estado').onchange=()=>{e.estadoOp=$('#fl_estado').value; save(); toast('Estado actualizado','ok'); render();};
   $('#fl_conductor').onchange=()=>{e.conductor=$('#fl_conductor').value.trim(); save(); render();};
   $('#fl_km').onchange=()=>{e.km=$('#fl_km').value.trim(); save();};
   $('#fl_notas').onchange=()=>{e.notas=$('#fl_notas').value; save(); render();};
+  $$('#mv_items .mv-cant').forEach(inp=> inp.oninput=updateTotals);
   $('#mv_save').onclick=registrarMovimiento;
+  $('#mv_print').onclick=()=>printChecklist(gatherMovement(e));
+  $$('.reprint').forEach(a=> a.onclick=ev=>{ ev.preventDefault(); const m=(e.movimientos||[]).find(x=>x.id===a.dataset.mid); if(m) printChecklist(m); });
+  updateTotals();
+}
+function updateTotals(){
+  let grand=0;
+  $$('#mv_items .mv-cant').forEach(inp=>{ const cant=parseFloat(inp.value)||0; const precio=parseFloat(inp.dataset.precio)||0; const tot=cant*precio; grand+=tot; const cell=$('#mv_items .mv-tot[data-id="'+inp.dataset.id+'"]'); if(cell) cell.textContent=money(tot); });
+  const g=$('#mv_grand'); if(g) g.innerHTML='<b>'+money(grand)+'</b>';
+}
+function gatherMovement(e){
+  const items={};
+  $$('#mv_items .mv-cant').forEach(inp=>{ const id=inp.dataset.id; const row=inp.closest('tr'); const dev=row.querySelector('.mv-dev'), obs=row.querySelector('.mv-obs'); const cant=parseFloat(inp.value)||0; const devv=parseFloat(dev&&dev.value)||0; const obsv=obs?obs.value.trim():''; if(cant||devv||obsv) items[id]={cant,dev:devv,obs:obsv}; });
+  const neumaticos={};
+  $$('#mv_neu .neu-est').forEach(sel=>{ const p=sel.dataset.pos; const cod=$('#mv_neu .neu-cod[data-pos="'+p+'"]'); const codv=cod?cod.value.trim():''; if(sel.value||codv) neumaticos[p]={estado:sel.value,codigo:codv}; });
+  return { tipo:$('#mv_tipo').value, folio:$('#mv_folio').value.trim(), fecha:$('#mv_fecha').value||toISO(today0()),
+    conductor:$('#mv_conductor').value.trim(), guardia:$('#mv_guardia').value.trim(), inspector:$('#mv_inspector').value.trim(),
+    km:$('#mv_km').value.trim(), patente:e.patente, tipoEquipo:e.tipo, items, neumaticos, obs:$('#mv_obs').value.trim() };
 }
 function registrarMovimiento(){
   const e=DB.equipos.find(x=>x.id===FLOTA_ID); if(!e) return;
-  const tipo=$('#mv_tipo').value, fecha=$('#mv_fecha').value||toISO(today0());
-  const conductor=$('#mv_conductor').value.trim(), km=$('#mv_km').value.trim();
-  const items={};
-  $$('#mv_items .ckrow').forEach(row=>{ const ok=row.querySelector('.mv-ok'), obs=row.querySelector('.mv-obs'); items[ok.dataset.id]={ok:ok.checked,obs:obs.value.trim()}; });
-  const mov={id:uid(),tipo,fecha,conductor,km,items,obs:$('#mv_obs').value.trim()};
+  const mov=gatherMovement(e); mov.id=uid();
   e.movimientos=e.movimientos||[]; e.movimientos.push(mov);
-  if(tipo==='entrega'){ e.conductor=conductor; e.estadoOp='en_ruta'; }
-  else { e.estadoOp='en_patio'; e.conductor=''; }
-  if(km) e.km=km;
-  save(); renderFlotaBody(); render(); toast(tipo==='entrega'?'Entrega registrada':'Devolución registrada','ok');
+  if(mov.tipo==='entrega'){ e.conductor=mov.conductor; e.estadoOp='en_ruta'; } else { e.estadoOp='en_patio'; e.conductor=''; }
+  if(mov.km) e.km=mov.km;
+  if(DB.folioSeq && DB.folioSeq[e.tipo]!==undefined) DB.folioSeq[e.tipo]++;
+  save(); renderFlotaBody(); render(); toast(mov.tipo==='entrega'?'Entrega registrada':'Devolución registrada','ok');
+}
+function printChecklist(mov){
+  const e=DB.equipos.find(x=>x.id===FLOTA_ID)||{};
+  const w=window.open('','_blank');
+  if(!w){ toast('Permite ventanas emergentes para imprimir','err'); return; }
+  w.document.write(buildPrintHTML(e, mov)); w.document.close(); w.focus();
+  setTimeout(()=>{ try{ w.print(); }catch(x){} }, 500);
+}
+function buildPrintHTML(e, mov){
+  const tipo=e.tipo||mov.tipoEquipo||'tracto';
+  const items=itemsFor(tipo);
+  const pos=(DB.neumaticoPos&&DB.neumaticoPos[tipo])||[];
+  let grand=0;
+  const rows=items.map(it=>{ const v=(mov.items||{})[it.id]||{}; const cant=v.cant||0; const tot=cant*it.precio; grand+=tot;
+    return `<tr><td>${esc(it.nombre)}</td><td class="r">${money(it.precio)}</td><td class="c">${cant||''}</td><td class="r">${cant?money(tot):''}</td><td class="c">${v.dev||''}</td><td>${esc(v.obs||'')}</td></tr>`; }).join('');
+  const neu=pos.map(p=>{ const v=(mov.neumaticos||{})[p]||{}; return `<tr><td class="c">${esc(p)}</td><td class="c">${esc(v.estado||'')}</td><td>${esc(v.codigo||'')}</td></tr>`; }).join('');
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Checklist ${esc(mov.folio||'')}</title>
+  <style>
+    *{box-sizing:border-box} body{font:12px Arial,Helvetica,sans-serif;color:#000;margin:18px}
+    h1{font-size:15px;margin:0} .sub{font-size:11px;color:#333}
+    .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1f4e79;padding-bottom:6px;margin-bottom:8px}
+    .brand{font-weight:800;font-size:18px;color:#1f4e79;letter-spacing:1px}
+    table{border-collapse:collapse;width:100%;margin:6px 0} th,td{border:1px solid #888;padding:3px 5px;font-size:11px}
+    th{background:#1f4e79;color:#fff;text-align:left} td.r{text-align:right} td.c{text-align:center}
+    tfoot td{font-weight:700;background:#eef}
+    .grid{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0} .fld{border:1px solid #888;padding:3px 6px;font-size:11px;min-width:150px}
+    .fld b{color:#1f4e79}
+    .two{display:flex;gap:12px;align-items:flex-start} .two>div{flex:1}
+    .decl{font-size:10.5px;margin-top:8px;border:1px solid #888;padding:6px}
+    .sign{display:flex;gap:14px;margin-top:22px} .sign div{flex:1;text-align:center;border-top:1px solid #000;padding-top:3px;font-size:10.5px}
+    @media print{body{margin:8mm}}
+  </style></head><body>
+  <div class="hd"><div><div class="brand">TZAMORA</div><h1>Checklist — Registro de Entrega y Recepción: ${tipo==='tracto'?'TRACTO':'RAMPLA'}</h1>
+    <div class="sub">${mov.tipo==='entrega'?'ENTREGA':'DEVOLUCIÓN'}</div></div>
+    <div style="text-align:right"><div class="fld"><b>N° Folio:</b> ${esc(mov.folio||'')}</div><div class="fld"><b>Fecha:</b> ${fmt(mov.fecha)}</div></div></div>
+  <div class="grid">
+    <div class="fld"><b>Conductor:</b> ${esc(mov.conductor||'')}</div>
+    <div class="fld"><b>Patente:</b> ${esc(e.patente||'')}</div>
+    <div class="fld"><b>Kilometraje:</b> ${esc(mov.km||'')}</div>
+    <div class="fld"><b>Guardia:</b> ${esc(mov.guardia||'')}</div>
+    <div class="fld"><b>Inspector / Jefe de patio:</b> ${esc(mov.inspector||'')}</div>
+  </div>
+  <div class="two">
+    <div>
+      <table><thead><tr><th>Elemento</th><th>Precio</th><th>Cant.</th><th>Total</th><th>Dev.</th><th>Observación</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3" class="r">TOTAL AVALUADO</td><td class="r">${money(grand)}</td><td colspan="2"></td></tr></tfoot></table>
+    </div>
+    <div style="max-width:230px">
+      <table><thead><tr><th>Pos</th><th>Est.</th><th>Código</th></tr></thead><tbody>${neu}</tbody></table>
+    </div>
+  </div>
+  <div class="fld" style="width:100%"><b>Observaciones:</b> ${esc(mov.obs||'')}</div>
+  <div class="decl">El conductor declara haber recibido conforme los artículos, y se compromete a cuidar y proteger los artículos señalados, los cuales están avaluados en <b>${money(grand)}</b>.</div>
+  <div class="sign"><div>Firma Conductor</div><div>Firma Guardia</div><div>Firma Supervisor</div></div>
+  </body></html>`;
 }
 
 /* ---------- dashboard (panel del gerente) ---------- */
@@ -634,11 +745,15 @@ function renderConfig(){
       <div style="margin-top:10px"><button class="btn sm cfg-add" data-cat="${cat}">+ Agregar documento</button></div>
     </div>`).join('');
   html += `<div class="cfgcard"><h3>Items de checklist (entrega / devolución)</h3>
-      <p class="hint" style="margin-top:0">Lo que se revisa al entregar o recibir un equipo (accesorios, estado…).</p>
-      ${(DB.checklistItems||[]).map(it=>`<div class="cfgrow ck" data-id="${it.id}">
-        <input class="input ck-nombre" value="${esc(it.nombre)}">
-        <button class="btn danger sm ck-del">Quitar</button></div>`).join('')}
-      <div style="margin-top:10px"><button class="btn sm" id="ckAdd">+ Agregar item</button></div>
+      <p class="hint" style="margin-top:0">Lo que se entrega al conductor, con su valor. Se usa en el módulo <b>Estado</b> y en el checklist impreso.</p>
+      ${[['tracto','Tractos'],['rampla','Ramplas']].map(([tp,tit])=>`
+        <div class="section-title">${tit}</div>
+        <div class="cfgrow ck2 head" style="color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.03em"><div>Elemento</div><div>Precio</div><div></div></div>
+        ${itemsFor(tp).map(it=>`<div class="cfgrow ck2" data-tipo="${tp}" data-id="${it.id}">
+          <input class="input ck-nombre" value="${esc(it.nombre)}">
+          <input class="input ck-precio mono" type="number" min="0" value="${it.precio||0}">
+          <button class="btn danger sm ck-del">Quitar</button></div>`).join('')}
+        <div style="margin:6px 0 12px"><button class="btn sm ck-add" data-tipo="${tp}">+ Agregar a ${tit.toLowerCase()}</button></div>`).join('')}
     </div>`;
   html += `<div class="cfgcard"><h3>Datos</h3>
       <p class="hint" style="margin-top:0">La app guarda todo en la nube (y una copia en este navegador). Exporta un respaldo cuando quieras.</p>
@@ -656,9 +771,10 @@ function renderConfig(){
   $$('.cfg-add').forEach(b=> b.onclick=()=>{ const cat=b.dataset.cat; const nombre=prompt('Nombre del documento:'); if(!nombre) return;
     const id=nombre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'_'+Math.random().toString(36).slice(2,5);
     DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12,general:true,tipo:'fecha'}); save(); renderConfig(); });
-  $$('.ck-nombre').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const it=(DB.checklistItems||[]).find(i=>i.id===row.dataset.id); if(it){it.nombre=inp.value; save();} });
-  $$('.ck-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); DB.checklistItems=(DB.checklistItems||[]).filter(i=>i.id!==row.dataset.id); save(); renderConfig(); });
-  const ckAdd=$('#ckAdd'); if(ckAdd) ckAdd.onclick=()=>{ const n=prompt('Nombre del item:'); if(!n) return; DB.checklistItems=DB.checklistItems||[]; DB.checklistItems.push({id:'ck'+Math.random().toString(36).slice(2,7),nombre:n.trim()}); save(); renderConfig(); };
+  $$('.ck-nombre').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const it=itemsFor(row.dataset.tipo).find(i=>i.id===row.dataset.id); if(it){it.nombre=inp.value; save();} });
+  $$('.ck-precio').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const it=itemsFor(row.dataset.tipo).find(i=>i.id===row.dataset.id); if(it){it.precio=parseInt(inp.value,10)||0; save();} });
+  $$('.ck-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); const tp=row.dataset.tipo; DB.checklistItems[tp]=itemsFor(tp).filter(i=>i.id!==row.dataset.id); save(); renderConfig(); });
+  $$('.ck-add').forEach(b=> b.onclick=()=>{ const tp=b.dataset.tipo; const n=prompt('Nombre del item:'); if(!n) return; DB.checklistItems[tp]=DB.checklistItems[tp]||[]; DB.checklistItems[tp].push({id:tp[0]+Math.random().toString(36).slice(2,6),nombre:n.trim(),precio:0}); save(); renderConfig(); });
   $('#cfgReset').onclick=()=>{ if(confirm('Esto reemplaza tus datos actuales por la flota original importada. ¿Continuar?')) resetSeed(); };
   $('#cfgWipe').onclick=()=>{ if(confirm('¿Borrar TODOS los datos de este navegador? No se puede deshacer.')){ DB={docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; save(); render(); toast('Datos borrados','ok'); } };
 }
