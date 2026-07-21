@@ -152,7 +152,26 @@ function migrate(){
     });
     DB.schemaVersion = 5;
   }
+  if(v<6){
+    // módulo Estado de flota: conductor, estado operativo, notas, movimientos + items de checklist
+    if(!DB.checklistItems) DB.checklistItems = defaultChecklistItems();
+    const seedEq=(window.SEED&&window.SEED.equipos)||[];
+    const byPat={}; seedEq.forEach(e=> byPat[normNom(e.patente)]=e);
+    DB.equipos.forEach(e=>{
+      if(e.conductor===undefined){ const s=byPat[normNom(e.patente)]; e.conductor=(s&&s.conductor)||''; }
+      if(e.estadoOp===undefined) e.estadoOp = e.conductor ? 'en_ruta' : 'en_patio';
+      if(e.notas===undefined) e.notas='';
+      if(!Array.isArray(e.movimientos)) e.movimientos=[];
+    });
+    DB.schemaVersion = 6;
+  }
 }
+function defaultChecklistItems(){
+  return ['Documentos del equipo','Extintor','Botiquín','Triángulos / conos','Llave de rueda','Gata',
+          'Chaleco reflectante','Neumático de repuesto','GPS','Cuñas','Estado carrocería / limpieza']
+    .map((n,i)=>({id:'ck'+(i+1), nombre:n}));
+}
+const OP_LABEL={ en_ruta:'En ruta', en_patio:'En patio', en_taller:'En taller' };
 function resetSeed(){ localStorage.removeItem(LS_KEY); DB=null; loadDB(); render(); toast('Datos restaurados desde la flota original','ok'); }
 
 /* ---------- clientes / requisitos ---------- */
@@ -198,8 +217,127 @@ function render(){
   if(VIEW==='config'){ $('#kpis').innerHTML=''; renderConfig(); return; }
   if(VIEW==='dashboard'){ renderDashboard(); return; }
   if(VIEW==='clientes'){ renderClientes(); return; }
+  if(VIEW==='flota'){ renderFlota(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- Estado de la flota (operativo) ---------- */
+let FLOTA = { tipo:'todos', op:'todos', q:'' };
+let FLOTA_ID = null;
+function ultimoMov(e){ const m=(e.movimientos||[]); return m.length? m.slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''))[0] : null; }
+function renderFlota(){
+  const eq=DB.equipos;
+  const c={total:eq.length,en_ruta:0,en_patio:0,en_taller:0};
+  eq.forEach(e=>{ const s=e.estadoOp||'en_patio'; c[s]=(c[s]||0)+1; });
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="n">${c.total}</div><div class="l">equipos</div></div>
+    <div class="kpi" style="--x:1"><div class="n" style="color:var(--brand)">${c.en_ruta}</div><div class="l">En ruta</div></div>
+    <div class="kpi green"><div class="n">${c.en_patio}</div><div class="l">En patio</div></div>
+    <div class="kpi amber"><div class="n">${c.en_taller}</div><div class="l">En taller</div></div>`;
+
+  let rows=eq.filter(e=>{
+    if(FLOTA.tipo!=='todos' && e.tipo!==FLOTA.tipo) return false;
+    if(FLOTA.op!=='todos' && (e.estadoOp||'en_patio')!==FLOTA.op) return false;
+    if(FLOTA.q){ const h=(e.patente+' '+(e.conductor||'')).toLowerCase(); if(!h.includes(FLOTA.q.toLowerCase())) return false; }
+    return true;
+  });
+  rows.sort((a,b)=> (a.patente||'').localeCompare(b.patente||''));
+
+  const filters=`<div class="toolbar">
+    <h2>Estado de la flota</h2>
+    <input class="input search" id="flq" placeholder="Buscar patente o conductor" value="${esc(FLOTA.q)}">
+    <select class="input" id="fltipo"><option value="todos">Todos los tipos</option><option value="tracto">Tractos</option><option value="rampla">Ramplas</option></select>
+    <select class="input" id="flop"><option value="todos">Todos los estados</option><option value="en_ruta">En ruta</option><option value="en_patio">En patio</option><option value="en_taller">En taller</option></select>
+    <span class="count">${rows.length} de ${eq.length}</span></div>`;
+
+  const body=rows.map(e=>{
+    const m=ultimoMov(e); const op=e.estadoOp||'en_patio';
+    return `<tr data-id="${e.id}">
+      <td><b>${esc(e.patente)}</b></td>
+      <td><span class="pilltipo">${e.tipo==='tracto'?'Tracto':'Rampla'}</span></td>
+      <td>${esc(e.conductor||'—')}</td>
+      <td><span class="badge op_${op}">${OP_LABEL[op]||op}</span></td>
+      <td class="dias">${m?(m.tipo==='entrega'?'Entrega':'Devolución')+' · '+fmt(m.fecha):'—'}</td>
+      <td>${e.notas?'<span title="'+esc(e.notas)+'">📝</span>':''}</td></tr>`;
+  }).join('');
+  const table=rows.length?`<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Tipo</th><th>Conductor actual</th><th>Estado</th><th>Último movimiento</th><th>Notas</th></tr></thead><tbody>${body}</tbody></table></div>`
+    :`<div class="tablewrap"><div class="empty">Sin resultados.</div></div>`;
+  $('#view').innerHTML=filters+table;
+
+  const fq=$('#flq'); if(fq) fq.oninput=()=>{FLOTA.q=fq.value;const p=fq.selectionStart;renderFlota();const n=$('#flq');n.focus();n.setSelectionRange(p,p);};
+  const ft=$('#fltipo'); if(ft){ft.value=FLOTA.tipo;ft.onchange=()=>{FLOTA.tipo=ft.value;renderFlota();};}
+  const fo=$('#flop'); if(fo){fo.value=FLOTA.op;fo.onchange=()=>{FLOTA.op=fo.value;renderFlota();};}
+  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>openFlotaDetail(tr.dataset.id));
+}
+function openFlotaDetail(id){
+  const e=DB.equipos.find(x=>x.id===id); if(!e) return;
+  FLOTA_ID=id;
+  $('#flTitle').textContent=e.patente+' · '+(e.tipo==='tracto'?'Tracto':'Rampla');
+  renderFlotaBody();
+  $('#flotaOverlay').classList.add('open');
+}
+function renderFlotaBody(){
+  const e=DB.equipos.find(x=>x.id===FLOTA_ID); if(!e) return;
+  const items=DB.checklistItems||[];
+  const hist=(e.movimientos||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  $('#flBody').innerHTML=`
+    <div class="formgrid">
+      <div class="field"><label>Estado</label><select class="input" id="fl_estado">
+        <option value="en_patio"${e.estadoOp==='en_patio'?' selected':''}>En patio</option>
+        <option value="en_ruta"${e.estadoOp==='en_ruta'?' selected':''}>En ruta</option>
+        <option value="en_taller"${e.estadoOp==='en_taller'?' selected':''}>En taller</option></select></div>
+      <div class="field"><label>Conductor actual</label><input class="input" id="fl_conductor" value="${esc(e.conductor||'')}"></div>
+      <div class="field"><label>Kilometraje</label><input class="input" id="fl_km" value="${esc(e.km||'')}"></div>
+    </div>
+    <div class="field" style="margin-top:8px"><label>Notas del equipo</label><textarea class="input" id="fl_notas" rows="2" style="width:100%;resize:vertical">${esc(e.notas||'')}</textarea></div>
+
+    <div class="section-title">Registrar entrega / devolución</div>
+    <div class="formgrid">
+      <div class="field"><label>Tipo</label><select class="input" id="mv_tipo">
+        <option value="entrega">Entrega (sale con conductor)</option>
+        <option value="devolucion">Devolución (vuelve al patio)</option></select></div>
+      <div class="field"><label>Fecha</label><input type="date" class="input" id="mv_fecha" value="${toISO(today0())}"></div>
+      <div class="field"><label>Conductor</label><input class="input" id="mv_conductor" value="${esc(e.conductor||'')}"></div>
+      <div class="field"><label>Kilometraje</label><input class="input" id="mv_km" value="${esc(e.km||'')}"></div>
+    </div>
+    <div class="section-title" style="margin-top:8px">Checklist — qué lleva el equipo</div>
+    <div id="mv_items">${items.length?items.map(it=>`
+      <div class="ckrow"><span class="ckname">${esc(it.nombre)}</span>
+        <label class="ckok"><input type="checkbox" class="mv-ok" data-id="${it.id}" checked> OK</label>
+        <input class="input mv-obs" data-id="${it.id}" placeholder="observación (opcional)"></div>`).join('')
+      :'<span class="hint">Define items en Configuración.</span>'}</div>
+    <div class="field" style="margin-top:8px"><label>Observación general</label><input class="input" id="mv_obs"></div>
+    <button class="btn primary" id="mv_save" style="margin-top:10px">Registrar movimiento</button>
+
+    <div class="section-title">Historial de movimientos (${hist.length})</div>
+    <div class="histlist">${hist.length?hist.map(m=>{
+      const okc=m.items?Object.values(m.items).filter(x=>x.ok).length:0;
+      const tot=m.items?Object.keys(m.items).length:0;
+      const obs=Object.entries(m.items||{}).filter(([k,v])=>v.obs).map(([k,v])=>{const it=(DB.checklistItems||[]).find(i=>i.id===k);return (it?it.nombre:k)+': '+v.obs;});
+      return `<div class="histrow">
+        <div><span class="movtag ${m.tipo}">${m.tipo==='entrega'?'Entrega':'Devolución'}</span> <b>${fmt(m.fecha)}</b> · ${esc(m.conductor||'—')}${m.km?(' · '+esc(m.km)+' km'):''}</div>
+        <div class="hint">Checklist ${okc}/${tot} OK${m.obs?(' · '+esc(m.obs)):''}${obs.length?(' · ⚠ '+esc(obs.join(' | '))):''}</div></div>`;
+    }).join(''):'<div class="hint">Sin movimientos registrados aún.</div>'}</div>`;
+
+  $('#fl_estado').onchange=()=>{e.estadoOp=$('#fl_estado').value; save(); toast('Estado actualizado','ok'); render();};
+  $('#fl_conductor').onchange=()=>{e.conductor=$('#fl_conductor').value.trim(); save(); render();};
+  $('#fl_km').onchange=()=>{e.km=$('#fl_km').value.trim(); save();};
+  $('#fl_notas').onchange=()=>{e.notas=$('#fl_notas').value; save(); render();};
+  $('#mv_save').onclick=registrarMovimiento;
+}
+function registrarMovimiento(){
+  const e=DB.equipos.find(x=>x.id===FLOTA_ID); if(!e) return;
+  const tipo=$('#mv_tipo').value, fecha=$('#mv_fecha').value||toISO(today0());
+  const conductor=$('#mv_conductor').value.trim(), km=$('#mv_km').value.trim();
+  const items={};
+  $$('#mv_items .ckrow').forEach(row=>{ const ok=row.querySelector('.mv-ok'), obs=row.querySelector('.mv-obs'); items[ok.dataset.id]={ok:ok.checked,obs:obs.value.trim()}; });
+  const mov={id:uid(),tipo,fecha,conductor,km,items,obs:$('#mv_obs').value.trim()};
+  e.movimientos=e.movimientos||[]; e.movimientos.push(mov);
+  if(tipo==='entrega'){ e.conductor=conductor; e.estadoOp='en_ruta'; }
+  else { e.estadoOp='en_patio'; e.conductor=''; }
+  if(km) e.km=km;
+  save(); renderFlotaBody(); render(); toast(tipo==='entrega'?'Entrega registrada':'Devolución registrada','ok');
 }
 
 /* ---------- dashboard (panel del gerente) ---------- */
@@ -392,7 +530,7 @@ function openAdd(){
   const isPer = VIEW==='personas';
   if(VIEW==='config'){ VIEW='equipos'; render(); }
   if(isPer){ EDIT={cat:'persona', ent:{id:uid(),nombre:'',rut:'',contrato:'',docs:{}}, isNew:true}; }
-  else { EDIT={cat:'tracto', ent:{id:uid(),patente:'',tipo:'tracto',marca:'',modelo:'',anio:'',docs:{}}, isNew:true}; }
+  else { EDIT={cat:'tracto', ent:{id:uid(),patente:'',tipo:'tracto',marca:'',modelo:'',anio:'',docs:{},conductor:'',estadoOp:'en_patio',notas:'',movimientos:[]}, isNew:true}; }
   fillModal();
 }
 function fillModal(){
@@ -495,8 +633,15 @@ function renderConfig(){
       </div>`; }).join('')}
       <div style="margin-top:10px"><button class="btn sm cfg-add" data-cat="${cat}">+ Agregar documento</button></div>
     </div>`).join('');
+  html += `<div class="cfgcard"><h3>Items de checklist (entrega / devolución)</h3>
+      <p class="hint" style="margin-top:0">Lo que se revisa al entregar o recibir un equipo (accesorios, estado…).</p>
+      ${(DB.checklistItems||[]).map(it=>`<div class="cfgrow ck" data-id="${it.id}">
+        <input class="input ck-nombre" value="${esc(it.nombre)}">
+        <button class="btn danger sm ck-del">Quitar</button></div>`).join('')}
+      <div style="margin-top:10px"><button class="btn sm" id="ckAdd">+ Agregar item</button></div>
+    </div>`;
   html += `<div class="cfgcard"><h3>Datos</h3>
-      <p class="hint" style="margin-top:0">La app guarda todo en este navegador. Exporta un respaldo con frecuencia.</p>
+      <p class="hint" style="margin-top:0">La app guarda todo en la nube (y una copia en este navegador). Exporta un respaldo cuando quieras.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn" id="cfgReset">↺ Restaurar flota original</button>
         <button class="btn danger" id="cfgWipe">Borrar todos los datos</button>
@@ -511,6 +656,9 @@ function renderConfig(){
   $$('.cfg-add').forEach(b=> b.onclick=()=>{ const cat=b.dataset.cat; const nombre=prompt('Nombre del documento:'); if(!nombre) return;
     const id=nombre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'_'+Math.random().toString(36).slice(2,5);
     DB.docTypes[cat].push({id,nombre:nombre.trim(),vigenciaMeses:12,general:true,tipo:'fecha'}); save(); renderConfig(); });
+  $$('.ck-nombre').forEach(inp=> inp.onchange=()=>{ const row=inp.closest('.cfgrow'); const it=(DB.checklistItems||[]).find(i=>i.id===row.dataset.id); if(it){it.nombre=inp.value; save();} });
+  $$('.ck-del').forEach(b=> b.onclick=()=>{ const row=b.closest('.cfgrow'); DB.checklistItems=(DB.checklistItems||[]).filter(i=>i.id!==row.dataset.id); save(); renderConfig(); });
+  const ckAdd=$('#ckAdd'); if(ckAdd) ckAdd.onclick=()=>{ const n=prompt('Nombre del item:'); if(!n) return; DB.checklistItems=DB.checklistItems||[]; DB.checklistItems.push({id:'ck'+Math.random().toString(36).slice(2,7),nombre:n.trim()}); save(); renderConfig(); };
   $('#cfgReset').onclick=()=>{ if(confirm('Esto reemplaza tus datos actuales por la flota original importada. ¿Continuar?')) resetSeed(); };
   $('#cfgWipe').onclick=()=>{ if(confirm('¿Borrar TODOS los datos de este navegador? No se puede deshacer.')){ DB={docTypes:{tracto:[],rampla:[],persona:[]},equipos:[],personas:[]}; save(); render(); toast('Datos borrados','ok'); } };
 }
@@ -729,9 +877,12 @@ function wireEvents(){
   $('#reqCancel').onclick=()=>$('#reqOverlay').classList.remove('open');
   $('#reqSave').onclick=saveReqEditor;
   $('#reqOverlay').onclick=e=>{ if(e.target.id==='reqOverlay') e.currentTarget.classList.remove('open'); };
+  $('#flClose').onclick=()=>$('#flotaOverlay').classList.remove('open');
+  $('#flCloseBtn').onclick=()=>$('#flotaOverlay').classList.remove('open');
+  $('#flotaOverlay').onclick=e=>{ if(e.target.id==='flotaOverlay') e.currentTarget.classList.remove('open'); };
   const lf=$('#loginForm'); if(lf) lf.onsubmit=doLogin;
   const lo=$('#btnLogout'); if(lo) lo.onclick=async ()=>{ if(CLOUD.sb){ try{ await CLOUD.sb.auth.signOut(); }catch(e){} } location.reload(); };
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); } });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); $('#expOverlay').classList.remove('open'); $('#reqOverlay').classList.remove('open'); $('#flotaOverlay').classList.remove('open'); } });
 }
 
 /* ---------- arranque ---------- */

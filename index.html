@@ -13,6 +13,7 @@
   <div class="tabs">
     <button class="tab active" data-view="dashboard">📊 Panel</button>
     <button class="tab" data-view="equipos">🚚 Equipos</button>
+    <button class="tab" data-view="flota">🧭 Estado</button>
     <button class="tab" data-view="clientes">🏢 Clientes</button>
     <button class="tab" data-view="config">⚙️ Configuración</button>
   </div>
@@ -57,6 +58,15 @@
         <button class="btn" id="expCsvEq">📄 Equipos a Excel (.csv)</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal detalle operativo (Estado de flota) -->
+<div class="overlay" id="flotaOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="flTitle">Equipo</h3><button class="iclose" id="flClose">&times;</button></div>
+    <div class="modal-body" id="flBody"></div>
+    <div class="modal-foot"><div class="spacer"></div><button class="btn primary" id="flCloseBtn">Cerrar</button></div>
   </div>
 </div>
 

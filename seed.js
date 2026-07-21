@@ -10,7 +10,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristhofer Miguel Maturana Tapia"
   },
   {
    "patente": "VYSP-70",
@@ -22,7 +23,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mauricio Zapata Sandoval"
   },
   {
    "patente": "PPVH-89",
@@ -124,7 +126,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Carlos Alberto Bernal Herrera"
   },
   {
    "patente": "RJYD-95",
@@ -175,7 +178,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Alejandro Remedy Vega"
   },
   {
    "patente": "THYX-54",
@@ -226,7 +230,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Héctor Mauricio Navarrete Ramiroz"
   },
   {
    "patente": "TRVD-99",
@@ -277,7 +282,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristopher Leroy Donaire Gutierrez"
   },
   {
    "patente": "RJYD-96",
@@ -324,7 +330,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristhofer Miguel Maturana Tapia"
   },
   {
    "patente": "THYX-53",
@@ -426,7 +433,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Luis Cristopher Adones Muñoz"
   },
   {
    "patente": "TRVF-10",
@@ -477,7 +485,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Esteban Mauricio Fantini Reyes"
   },
   {
    "patente": "THYX-52",
@@ -524,7 +533,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Victor Manuel Campos Rojas"
   },
   {
    "patente": "SHJK-64",
@@ -575,7 +585,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Emmanuel Horacio Delgado Cordova"
   },
   {
    "patente": "THYX-58",
@@ -626,7 +637,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Matias Gutierrez Robles"
   },
   {
    "patente": "THYX-61",
@@ -677,7 +689,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Diego Andres Toro Olguin"
   },
   {
    "patente": "SHGR-85",
@@ -772,7 +785,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Carlos Christian Fierro Rocha"
   },
   {
    "patente": "VVRK-22",
@@ -820,7 +834,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mario Ramos Ramos"
   },
   {
    "patente": "VVRK-21",
@@ -864,7 +879,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jesus David Donoso Leon"
   },
   {
    "patente": "VVRK-26",
@@ -912,7 +928,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Francisco Garcia Lopez"
   },
   {
    "patente": "VVRK-27",
@@ -956,7 +973,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Camilo Mendoza González"
   },
   {
    "patente": "VVRK-23",
@@ -1000,7 +1018,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Luis Reinaldo Urbina Vasquez"
   },
   {
    "patente": "VVRK-24",
@@ -1048,7 +1067,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Manuel David Tapia Balbontin"
   },
   {
    "patente": "VVRK-25",
@@ -1092,7 +1112,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "David Mora Lobos"
   },
   {
    "patente": "VLSV-42",
@@ -1143,7 +1164,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Victor Pizarro Maldonado"
   },
   {
    "patente": "VLTC-51",
@@ -1194,7 +1216,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristian Felipe Tapia Tapia"
   },
   {
    "patente": "VLSS-89",
@@ -1245,7 +1268,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Alexis Michell Alegria Diaz"
   },
   {
    "patente": "VLSV-12",
@@ -1296,7 +1320,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jose Miguel Valenzuela Guajardo"
   },
   {
    "patente": "PPVH-92",
@@ -1347,7 +1372,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Sergio Enrique Concha Valle"
   },
   {
    "patente": "RJYD-93",
@@ -1398,7 +1424,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Camilo Mendoza González"
   },
   {
    "patente": "RJXD-10",
@@ -1500,7 +1527,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Claudio Esteban Valencia Pasten"
   },
   {
    "patente": "SHGR-66",
@@ -1551,7 +1579,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Victor Manuel Campos Rojas"
   },
   {
    "patente": "SHGR-56",
@@ -1602,7 +1631,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Esteban Valenzuela Morales"
   },
   {
    "patente": "TVBD-32",
@@ -1653,7 +1683,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "David Hernandez Orrego"
   },
   {
    "patente": "VHSG-68",
@@ -1697,7 +1728,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Javier Rosas Sandoval"
   },
   {
    "patente": "VPVY-29",
@@ -1748,7 +1780,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristian Rodrigo Ormazabal Herrera"
   },
   {
    "patente": "RJXD-13",
@@ -1799,7 +1832,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jaime Jorge Diaz Gonzalez"
   },
   {
    "patente": "VPWC-70",
@@ -1850,7 +1884,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Ángel Minto Miranda Pereira"
   },
   {
    "patente": "VPVY-66",
@@ -1901,7 +1936,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Rene Alberto Morales Robles"
   },
   {
    "patente": "VPVY-25",
@@ -1952,7 +1988,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mario Enrique Remedy Perez"
   },
   {
    "patente": "VYSP-66",
@@ -1996,7 +2033,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Arnoldo Collao Valle"
   },
   {
    "patente": "VYSP-67",
@@ -2040,7 +2078,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Pablo Vega Soto"
   },
   {
    "patente": "VYSP-63",
@@ -2084,7 +2123,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Deni Luis Valenzuela Tabilo"
   },
   {
    "patente": "VYSP-69",
@@ -2128,7 +2168,8 @@ window.SEED = {
     "registro_nacional": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Roberto Alejandro Naranjo Quijada"
   },
   {
    "patente": "PPVH-87",
@@ -2251,7 +2292,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Luis Cristopher Adones Muñoz"
   },
   {
    "patente": "PXDH-30",
@@ -2287,7 +2329,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Luis Reinaldo Urbina Vasquez"
   },
   {
    "patente": "PXDH-34",
@@ -2359,7 +2402,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mario Ramos Ramos"
   },
   {
    "patente": "KYRG-33",
@@ -2395,7 +2439,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Claudio Esteban Valencia Pasten"
   },
   {
    "patente": "PTXZ-71",
@@ -2464,7 +2509,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Deni Luis Valenzuela Tabilo"
   },
   {
    "patente": "KYRF-17",
@@ -2500,7 +2546,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Pablo Vega Soto"
   },
   {
    "patente": "KYRF-23",
@@ -2536,7 +2583,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mario Enrique Remedy Perez"
   },
   {
    "patente": "KYRG-36",
@@ -2572,7 +2620,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Esteban Valenzuela Morales"
   },
   {
    "patente": "PXHX-13",
@@ -2608,7 +2657,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mauricio Zapata Sandoval"
   },
   {
    "patente": "KYRF-18",
@@ -2644,7 +2694,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Alexis Michell Alegria Diaz"
   },
   {
    "patente": "PXDH-33",
@@ -2680,7 +2731,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Esteban Mauricio Fantini Reyes"
   },
   {
    "patente": "PWYX-70",
@@ -2716,7 +2768,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Rene Alberto Morales Robles"
   },
   {
    "patente": "KYRF-20",
@@ -2752,7 +2805,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Sergio Enrique Concha Valle"
   },
   {
    "patente": "KYPJ-32",
@@ -2824,7 +2878,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Héctor Mauricio Navarrete Ramiroz"
   },
   {
    "patente": "JWPT-47",
@@ -2860,7 +2915,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Manuel David Tapia Balbontin"
   },
   {
    "patente": "KYRG-32",
@@ -2896,7 +2952,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Mario Ramos Ramos"
   },
   {
    "patente": "KYRG-38",
@@ -2932,7 +2989,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Victor Pizarro Maldonado"
   },
   {
    "patente": "PWSC-63",
@@ -2968,7 +3026,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Pablo Vega Soto"
   },
   {
    "patente": "KYRF-25",
@@ -3004,7 +3063,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Matias Gutierrez Robles"
   },
   {
    "patente": "PWVF-70",
@@ -3040,7 +3100,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristopher Leroy Donaire Gutierrez"
   },
   {
    "patente": "KYRF-19",
@@ -3076,7 +3137,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jesus David Donoso Leon"
   },
   {
    "patente": "KYRF-24",
@@ -3184,7 +3246,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Manuel David Tapia Balbontin"
   },
   {
    "patente": "PXHX-18",
@@ -3220,7 +3283,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristhofer Miguel Maturana Tapia"
   },
   {
    "patente": "KYPJ-31",
@@ -3292,7 +3356,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Alejandro Remedy Vega"
   },
   {
    "patente": "PXDJ-14",
@@ -3328,7 +3393,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Sergio Enrique Concha Valle"
   },
   {
    "patente": "PWSC-69",
@@ -3400,7 +3466,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jaime Jorge Diaz Gonzalez"
   },
   {
    "patente": "PXFT-56",
@@ -3469,7 +3536,8 @@ window.SEED = {
      "realizado": "2026-05-27",
      "vence": "2026-11-27"
     }
-   }
+   },
+   "conductor": "David Mora Lobos"
   },
   {
    "patente": "PXFT-57",
@@ -3505,7 +3573,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Carlos Jose Bianchi Elguin"
   },
   {
    "patente": "PXFT-55",
@@ -3541,7 +3610,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Carlos Christian Fierro Rocha"
   },
   {
    "patente": "PWSC-64",
@@ -3577,7 +3647,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Roberto Alejandro Naranjo Quijada"
   },
   {
    "patente": "JWPT-49",
@@ -3613,7 +3684,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Esteban Mauricio Fantini Reyes"
   },
   {
    "patente": "PXPG-42",
@@ -3646,7 +3718,8 @@ window.SEED = {
      "realizado": "2026-04-22",
      "vence": "2026-10-22"
     }
-   }
+   },
+   "conductor": "Sergio Enrique Concha Valle"
   },
   {
    "patente": "PXPG-41",
@@ -3679,7 +3752,8 @@ window.SEED = {
      "realizado": "2026-06-10",
      "vence": "2026-12-10"
     }
-   }
+   },
+   "conductor": "Camilo Mendoza González"
   },
   {
    "patente": "PWSC-68",
@@ -3715,7 +3789,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Ángel Minto Miranda Pereira"
   },
   {
    "patente": "KYPJ-36",
@@ -3787,7 +3862,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristian Rodrigo Ormazabal Herrera"
   },
   {
    "patente": "PXDJ-12",
@@ -3823,7 +3899,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Carlos Alberto Bernal Herrera"
   },
   {
    "patente": "PWSC-71",
@@ -3895,7 +3972,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Francisco Garcia Lopez"
   },
   {
    "patente": "KYRG-35",
@@ -3931,7 +4009,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Arnoldo Collao Valle"
   },
   {
    "patente": "PXHX-15",
@@ -3967,7 +4046,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jesus David Donoso Leon"
   },
   {
    "patente": "PWSC-67",
@@ -4003,7 +4083,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Jose Miguel Valenzuela Guajardo"
   },
   {
    "patente": "PXHX-17",
@@ -4039,7 +4120,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Pablo Vega Soto"
   },
   {
    "patente": "KYRB-94",
@@ -4075,7 +4157,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Cristian Felipe Tapia Tapia"
   },
   {
    "patente": "JWPT-48",
@@ -4111,7 +4194,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Victor Manuel Campos Rojas"
   },
   {
    "patente": "PWSC-72",
@@ -4147,7 +4231,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Javier Rosas Sandoval"
   },
   {
    "patente": "PXHX-16",
@@ -4183,7 +4268,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Emmanuel Horacio Delgado Cordova"
   },
   {
    "patente": "PWSC-70",
@@ -4219,7 +4305,8 @@ window.SEED = {
     "padron": {
      "cumple": true
     }
-   }
+   },
+   "conductor": "Diego Andres Toro Olguin"
   }
  ],
  "personas": [],

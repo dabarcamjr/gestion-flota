@@ -166,3 +166,20 @@ td .sdot{margin:0 auto;display:block}
 .loginlbl{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:12px 0 5px}
 .logincard .input{width:100%}
 .loginerr{color:var(--red);font-size:13px;min-height:18px;margin-top:10px}
+
+/* ---- Estado de flota (operativo) ---- */
+.badge.op_en_ruta{background:var(--brand-soft);color:var(--brand)}
+.badge.op_en_patio{background:var(--green-bg);color:var(--green)}
+.badge.op_en_taller{background:var(--amber-bg);color:var(--amber)}
+.cfgrow.ck{grid-template-columns:1fr auto}
+.ckrow{display:grid;grid-template-columns:1fr 70px 1.3fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.ckrow:last-child{border-bottom:0}
+.ckname{font-size:13.5px}
+.ckok{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer}
+.ckok input{width:16px;height:16px;accent-color:var(--green)}
+.mv-obs{font-size:13px;padding:6px 9px}
+.histlist{display:flex;flex-direction:column;gap:8px}
+.histrow{background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.movtag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.movtag.entrega{background:var(--brand-soft);color:var(--brand)}
+.movtag.devolucion{background:var(--green-bg);color:var(--green)}
