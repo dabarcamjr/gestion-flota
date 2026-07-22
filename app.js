@@ -256,8 +256,63 @@ function render(){
   if(VIEW==='clientes'){ renderClientes(); return; }
   if(VIEW==='flota'){ renderFlota(); return; }
   if(VIEW==='mantencion'){ renderMantencion(); return; }
+  if(VIEW==='reportes'){ renderReportes(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- Reportes ---------- */
+function daysAgoISO(n){ const d=today0(); d.setDate(d.getDate()-n); return toISO(d); }
+let REP = { tipo:'movimientos', desde:daysAgoISO(30), hasta:null };
+function repRows(){
+  const desde=REP.desde||'0000-01-01', hasta=REP.hasta||toISO(today0());
+  const inRange=f=> f && f>=desde && f<=hasta;
+  if(REP.tipo==='mantenciones'){
+    const rows=[];
+    DB.equipos.forEach(e=>{ (e.mant&&e.mant.historial||[]).forEach(h=>{ if(inRange(h.fecha)) rows.push({fecha:h.fecha,patente:e.patente,km:h.km,lugar:h.lugar||'',tipo:h.tipo||'',obs:h.obs||''}); }); });
+    rows.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+    return {cols:['Fecha','Patente','Km','Lugar','Tipo','Observación'], rows:rows.map(r=>[fmt(r.fecha),r.patente,nkm(r.km),r.lugar,r.tipo,r.obs]), n:rows.length};
+  }
+  // movimientos (entregas/devoluciones)
+  const rows=[];
+  DB.equipos.forEach(e=>{ (e.movimientos||[]).forEach(m=>{ if(inRange(m.fecha)) rows.push({fecha:m.fecha,folio:m.folio||'',patente:e.patente,tipoEq:e.tipo,tipoMov:m.tipo,conductor:m.conductor||'',km:m.km||''}); }); });
+  rows.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  return {cols:['Fecha','Folio','Patente','Equipo','Movimiento','Conductor','Km'],
+    rows:rows.map(r=>[fmt(r.fecha),r.folio,r.patente,r.tipoEq==='tracto'?'Tracto':'Rampla',r.tipoMov==='entrega'?'Entrega':'Devolución',r.conductor,r.km]), n:rows.length};
+}
+function renderReportes(){
+  const data=repRows();
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="n">${data.n}</div><div class="l">registros</div></div>
+    <div class="kpi"><div class="l" style="margin-top:0">Período</div><div class="n" style="font-size:15px">${fmt(REP.desde)} → ${fmt(REP.hasta||toISO(today0()))}</div></div>`;
+  const filters=`<div class="toolbar">
+    <h2>Reportes</h2>
+    <select class="input" id="rtipo"><option value="movimientos">Entregas / Devoluciones</option><option value="mantenciones">Mantenciones</option></select>
+    <label class="dias">Desde <input type="date" class="input" id="rdesde" value="${esc(REP.desde||'')}"></label>
+    <label class="dias">Hasta <input type="date" class="input" id="rhasta" value="${esc(REP.hasta||toISO(today0()))}"></label>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn sm" id="rcsv">Exportar CSV</button>
+    <button class="btn sm" id="rprint">🖨️ Imprimir</button></div>`;
+  const head=`<tr>${data.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>`;
+  const body=data.rows.slice(0,300).map(r=>`<tr>${r.map((c,i)=>`<td${i===0||i===6?' class="mono"':''}>${esc(c)}</td>`).join('')}</tr>`).join('');
+  $('#view').innerHTML=filters+(data.n?`<div class="tablewrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>${data.n>300?`<p class="hint" style="margin-top:8px">Mostrando 300 de ${data.n}. Acota el período o exporta el CSV completo.</p>`:''}`:`<div class="tablewrap"><div class="empty">Sin registros en este período.</div></div>`);
+  const t=$('#rtipo'); t.value=REP.tipo; t.onchange=()=>{REP.tipo=t.value;renderReportes();};
+  $('#rdesde').onchange=e=>{REP.desde=e.target.value;renderReportes();};
+  $('#rhasta').onchange=e=>{REP.hasta=e.target.value;renderReportes();};
+  $('#rcsv').onclick=()=>{ const csv='﻿'+[data.cols].concat(data.rows).map(r=>r.map(csvCell).join(';')).join('\n'); download('reporte-'+REP.tipo+'-'+toISO(today0())+'.csv', csv, 'text/csv'); toast('CSV descargado','ok'); };
+  $('#rprint').onclick=()=>printReporte(data);
+}
+function printReporte(data){
+  const w=window.open('','_blank'); if(!w){ toast('Permite ventanas emergentes','err'); return; }
+  const title=REP.tipo==='mantenciones'?'Mantenciones':'Entregas y Devoluciones';
+  const rows=data.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Reporte</title>
+   <style>body{font:12px Arial;margin:18px}.brand{font-weight:800;color:#1f4e79;font-size:18px}h1{font-size:15px;margin:2px 0}
+   table{border-collapse:collapse;width:100%;margin-top:8px}th,td{border:1px solid #888;padding:3px 6px;font-size:11px}th{background:#1f4e79;color:#fff;text-align:left}</style></head>
+   <body><div class="brand">TZAMORA</div><h1>Reporte de ${title}</h1>
+   <div>Período: ${fmt(REP.desde)} al ${fmt(REP.hasta||toISO(today0()))} · ${data.n} registros</div>
+   <table><thead><tr>${data.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  w.document.close(); w.focus(); setTimeout(()=>{try{w.print();}catch(x){}},400);
 }
 
 /* ---------- Mantención por kilometraje ---------- */
