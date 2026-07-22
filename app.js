@@ -184,6 +184,11 @@ function migrate(){
     });
     DB.schemaVersion = 8;
   }
+  if(v<9){
+    // módulo Portería (control de ingreso/salida)
+    if(!Array.isArray(DB.porteria)) DB.porteria = [];
+    DB.schemaVersion = 9;
+  }
 }
 function defaultChecklistItems(){
   return {
@@ -257,8 +262,79 @@ function render(){
   if(VIEW==='flota'){ renderFlota(); return; }
   if(VIEW==='mantencion'){ renderMantencion(); return; }
   if(VIEW==='reportes'){ renderReportes(); return; }
+  if(VIEW==='porteria'){ renderPorteria(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- Portería (control de ingreso/salida) ---------- */
+let PORT = { q:'', tipo:'todos', guardia:'' };
+function nowLocal(){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+function fmtDT(s){ if(!s) return '—'; const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if(!m) return s; return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`; }
+function conductoresList(){ const set={}; DB.equipos.forEach(e=>{ if(e.conductor) set[e.conductor]=1; (e.movimientos||[]).forEach(m=>{ if(m.conductor) set[m.conductor]=1; }); }); return Object.keys(set).sort(); }
+function dentroCount(){ const last={}; (DB.porteria||[]).slice().sort((a,b)=>(a.ts||'').localeCompare(b.ts||'')).forEach(p=>{ if(p.patente) last[normNom(p.patente)]=p.tipo; }); return Object.values(last).filter(t=>t==='entrada').length; }
+function renderPorteria(){
+  const log=(DB.porteria||[]).slice().sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+  const hoy=toISO(today0());
+  const entradasHoy=log.filter(p=>p.tipo==='entrada'&&(p.ts||'').slice(0,10)===hoy).length;
+  const salidasHoy=log.filter(p=>p.tipo==='salida'&&(p.ts||'').slice(0,10)===hoy).length;
+  $('#kpis').innerHTML=`
+    <div class="kpi green"><div class="n">${entradasHoy}</div><div class="l">Entradas hoy</div></div>
+    <div class="kpi amber"><div class="n">${salidasHoy}</div><div class="l">Salidas hoy</div></div>
+    <div class="kpi"><div class="n" style="color:var(--brand)">${dentroCount()}</div><div class="l">Equipos dentro</div></div>
+    <div class="kpi"><div class="n">${log.length}</div><div class="l">Registros totales</div></div>`;
+
+  const tractos=DB.equipos.filter(e=>e.tipo==='tracto').map(e=>e.patente).sort();
+  const ramplas=DB.equipos.filter(e=>e.tipo==='rampla').map(e=>e.patente).sort();
+  const conds=conductoresList();
+  const form=`<div class="cfgcard portform">
+    <h3>Registrar movimiento en portería</h3>
+    <div class="formgrid">
+      <div class="field"><label>Tipo</label><select class="input" id="pg_tipo"><option value="entrada">Entrada</option><option value="salida">Salida</option></select></div>
+      <div class="field"><label>Fecha y hora</label><input type="datetime-local" class="input" id="pg_ts" value="${nowLocal()}"></div>
+      <div class="field"><label>Conductor</label><input class="input" id="pg_cond" list="dl_cond" value=""></div>
+      <div class="field"><label>Patente (tracto)</label><input class="input" id="pg_pat" list="dl_tractos"></div>
+      <div class="field"><label>Rampla</label><input class="input" id="pg_rampla" list="dl_ramplas"></div>
+      <div class="field"><label>Guardia</label><input class="input" id="pg_guardia" value="${esc(PORT.guardia)}"></div>
+      <div class="field" style="grid-column:1/-1"><label>Observación</label><input class="input" id="pg_obs"></div>
+    </div>
+    <div style="margin-top:10px"><button class="btn primary" id="pg_save">Registrar</button></div>
+    <datalist id="dl_tractos">${tractos.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+    <datalist id="dl_ramplas">${ramplas.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+    <datalist id="dl_cond">${conds.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+  </div>`;
+
+  let list=log.filter(p=>{
+    if(PORT.tipo!=='todos' && p.tipo!==PORT.tipo) return false;
+    if(PORT.q){ const h=((p.conductor||'')+' '+(p.patente||'')+' '+(p.rampla||'')).toLowerCase(); if(!h.includes(PORT.q.toLowerCase())) return false; }
+    return true;
+  });
+  const filters=`<div class="toolbar"><h2>Bitácora de portería</h2>
+    <input class="input search" id="pq" placeholder="Buscar conductor o patente" value="${esc(PORT.q)}">
+    <select class="input" id="ptipo"><option value="todos">Todos</option><option value="entrada">Entradas</option><option value="salida">Salidas</option></select>
+    <span class="count">${list.length}</span></div>`;
+  const body=list.slice(0,200).map(p=>`<tr>
+    <td class="mono">${fmtDT(p.ts)}</td>
+    <td><span class="badge ${p.tipo==='entrada'?'op_en_patio':'op_en_ruta'}">${p.tipo==='entrada'?'Entrada':'Salida'}</span></td>
+    <td>${esc(p.conductor||'—')}</td><td><b>${esc(p.patente||'—')}</b></td><td>${esc(p.rampla||'')}</td>
+    <td>${esc(p.guardia||'')}</td><td>${esc(p.obs||'')} <a href="#" class="pdel" data-id="${p.id}" title="Eliminar">✕</a></td></tr>`).join('');
+  const table=list.length?`<div class="tablewrap"><table><thead><tr><th>Fecha/hora</th><th>Tipo</th><th>Conductor</th><th>Patente</th><th>Rampla</th><th>Guardia</th><th>Observación</th></tr></thead><tbody>${body}</tbody></table></div>`:`<div class="tablewrap"><div class="empty">Sin registros aún. Usa el formulario de arriba.</div></div>`;
+  $('#view').innerHTML=form+filters+table;
+
+  $('#pg_save').onclick=registrarPorteria;
+  const pq=$('#pq'); if(pq) pq.oninput=()=>{PORT.q=pq.value;const c=pq.selectionStart;renderPorteria();const n=$('#pq');n.focus();n.setSelectionRange(c,c);};
+  const pt=$('#ptipo'); if(pt){pt.value=PORT.tipo;pt.onchange=()=>{PORT.tipo=pt.value;renderPorteria();};}
+  $$('.pdel').forEach(a=> a.onclick=ev=>{ ev.preventDefault(); if(confirm('¿Eliminar este registro?')){ DB.porteria=DB.porteria.filter(x=>x.id!==a.dataset.id); save(); renderPorteria(); } });
+}
+function registrarPorteria(){
+  const tipo=$('#pg_tipo').value, ts=$('#pg_ts').value||nowLocal();
+  const rec={ id:uid(), tipo, ts, conductor:$('#pg_cond').value.trim(), patente:$('#pg_pat').value.trim().toUpperCase(), rampla:$('#pg_rampla').value.trim().toUpperCase(), guardia:$('#pg_guardia').value.trim(), obs:$('#pg_obs').value.trim() };
+  if(!rec.patente && !rec.conductor){ toast('Ingresa al menos patente o conductor','err'); return; }
+  DB.porteria=DB.porteria||[]; DB.porteria.push(rec);
+  PORT.guardia=rec.guardia;
+  // sincronizar estado de flota del tracto
+  if(rec.patente){ const e=DB.equipos.find(x=>normNom(x.patente)===normNom(rec.patente)); if(e){ e.estadoOp = tipo==='entrada'?'en_patio':'en_ruta'; if(tipo==='salida' && rec.conductor) e.conductor=rec.conductor; } }
+  save(); renderPorteria(); render(); toast(tipo==='entrada'?'Entrada registrada':'Salida registrada','ok');
 }
 
 /* ---------- Reportes ---------- */

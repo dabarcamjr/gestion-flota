@@ -198,3 +198,9 @@ td .sdot{margin:0 auto;display:block}
 .mantsumm{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .mantsumm .l{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
 .mantsumm b{font-size:16px}
+
+/* ---- Portería ---- */
+.portform{margin-bottom:16px}
+.portform .formgrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.pdel{color:var(--faint);text-decoration:none;margin-left:6px;font-size:12px}
+.pdel:hover{color:var(--red)}
