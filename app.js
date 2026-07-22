@@ -189,6 +189,11 @@ function migrate(){
     if(!Array.isArray(DB.porteria)) DB.porteria = [];
     DB.schemaVersion = 9;
   }
+  if(v<10){
+    // módulo Combustible
+    if(!Array.isArray(DB.combustible)) DB.combustible = [];
+    DB.schemaVersion = 10;
+  }
 }
 function defaultChecklistItems(){
   return {
@@ -263,8 +268,81 @@ function render(){
   if(VIEW==='mantencion'){ renderMantencion(); return; }
   if(VIEW==='reportes'){ renderReportes(); return; }
   if(VIEW==='porteria'){ renderPorteria(); return; }
+  if(VIEW==='combustible'){ renderCombustible(); return; }
   renderKpis();
   renderTable();
+}
+
+/* ---------- Combustible ---------- */
+let COMB = { q:'' };
+function rendimientos(){
+  // por patente, ordenar por km asc y calcular km/litro entre cargas consecutivas
+  const byPat={};
+  (DB.combustible||[]).forEach(c=>{ (byPat[normNom(c.patente)]=byPat[normNom(c.patente)]||[]).push(c); });
+  const map={};
+  Object.values(byPat).forEach(arr=>{
+    arr.sort((a,b)=>(a.km||0)-(b.km||0));
+    for(let i=1;i<arr.length;i++){ const d=(arr[i].km||0)-(arr[i-1].km||0); const l=arr[i].litros||0; if(d>0&&l>0) map[arr[i].id]=d/l; }
+  });
+  return map;
+}
+function renderCombustible(){
+  const list=(DB.combustible||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const rend=rendimientos();
+  const hoyMes=toISO(today0()).slice(0,7);
+  const litrosMes=list.filter(c=>(c.fecha||'').slice(0,7)===hoyMes).reduce((s,c)=>s+(c.litros||0),0);
+  const rvals=Object.values(rend); const rprom=rvals.length?(rvals.reduce((a,b)=>a+b,0)/rvals.length):null;
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="n">${list.length}</div><div class="l">cargas registradas</div></div>
+    <div class="kpi"><div class="n">${Math.round(litrosMes).toLocaleString('es-CL')}</div><div class="l">litros este mes</div></div>
+    <div class="kpi"><div class="n">${rprom?rprom.toFixed(2):'—'}</div><div class="l">km/litro promedio</div></div>`;
+
+  const tractos=DB.equipos.filter(e=>e.tipo==='tracto').map(e=>e.patente).sort();
+  const conds=conductoresList();
+  const form=`<div class="cfgcard portform"><h3>Registrar carga de combustible</h3>
+    <div class="formgrid">
+      <div class="field"><label>Fecha</label><input type="date" class="input" id="cg_fecha" value="${toISO(today0())}"></div>
+      <div class="field"><label>Tracto</label><input class="input" id="cg_pat" list="dl_tractos_c"></div>
+      <div class="field"><label>Conductor</label><input class="input" id="cg_cond" list="dl_cond_c"></div>
+      <div class="field"><label>Kilometraje</label><input type="number" min="0" class="input" id="cg_km"></div>
+      <div class="field"><label>Litros</label><input type="number" min="0" step="0.1" class="input" id="cg_lit"></div>
+      <div class="field"><label>N° Guía</label><input class="input" id="cg_guia"></div>
+      <div class="field" style="grid-column:1/-1"><label>Observación</label><input class="input" id="cg_obs"></div>
+    </div>
+    <div style="margin-top:10px"><button class="btn primary" id="cg_save">Registrar carga</button></div>
+    <datalist id="dl_tractos_c">${tractos.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+    <datalist id="dl_cond_c">${conds.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>`;
+
+  let filt=list.filter(c=>{ if(COMB.q){ const h=((c.patente||'')+' '+(c.conductor||'')).toLowerCase(); if(!h.includes(COMB.q.toLowerCase())) return false; } return true; });
+  const filters=`<div class="toolbar"><h2>Cargas de combustible</h2>
+    <input class="input search" id="cq" placeholder="Buscar tracto o conductor" value="${esc(COMB.q)}">
+    <span class="count">${filt.length}</span></div>`;
+  const body=filt.slice(0,200).map(c=>{
+    const r=rend[c.id]; const rcls=r==null?'':(r<1.8?'m_vencida':(r>4?'m_proxima':'m_al_dia'));
+    return `<tr>
+      <td class="mono">${fmt(c.fecha)}</td><td><b>${esc(c.patente||'')}</b></td><td>${esc(c.conductor||'')}</td>
+      <td class="mono">${c.km!=null?Number(c.km).toLocaleString('es-CL'):''}</td>
+      <td class="mono">${c.litros!=null?Number(c.litros).toLocaleString('es-CL'):''}</td>
+      <td>${r!=null?`<span class="badge ${rcls}">${r.toFixed(2)} km/l</span>`:'<span class="dias">—</span>'}</td>
+      <td>${esc(c.guia||'')} <a href="#" class="cdel" data-id="${c.id}" title="Eliminar">✕</a></td></tr>`;
+  }).join('');
+  const table=filt.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Tracto</th><th>Conductor</th><th>Km</th><th>Litros</th><th>Rendimiento</th><th>Guía</th></tr></thead><tbody>${body}</tbody></table></div><p class="hint" style="margin-top:8px">🟢 rendimiento normal · 🔴 bajo (revisar posible fuga/robo) · 🟡 alto (revisar kilometraje).</p>`:`<div class="tablewrap"><div class="empty">Sin cargas aún. Registra la primera arriba.</div></div>`;
+  $('#view').innerHTML=form+filters+table;
+
+  $('#cg_save').onclick=registrarCarga;
+  const cq=$('#cq'); if(cq) cq.oninput=()=>{COMB.q=cq.value;const p=cq.selectionStart;renderCombustible();const n=$('#cq');n.focus();n.setSelectionRange(p,p);};
+  $$('.cdel').forEach(a=> a.onclick=ev=>{ ev.preventDefault(); if(confirm('¿Eliminar esta carga?')){ DB.combustible=DB.combustible.filter(x=>x.id!==a.dataset.id); save(); renderCombustible(); } });
+}
+function registrarCarga(){
+  const km=parseFloat($('#cg_km').value), lit=parseFloat($('#cg_lit').value);
+  const rec={ id:uid(), fecha:$('#cg_fecha').value||toISO(today0()), patente:$('#cg_pat').value.trim().toUpperCase(), conductor:$('#cg_cond').value.trim(),
+    km:isNaN(km)?null:km, litros:isNaN(lit)?null:lit, guia:$('#cg_guia').value.trim(), obs:$('#cg_obs').value.trim() };
+  if(!rec.patente){ toast('Ingresa el tracto','err'); return; }
+  if(rec.litros==null||rec.litros<=0){ toast('Ingresa los litros','err'); return; }
+  DB.combustible=DB.combustible||[]; DB.combustible.push(rec);
+  // actualizar km del tracto si es mayor
+  if(rec.km!=null){ const e=DB.equipos.find(x=>normNom(x.patente)===normNom(rec.patente)); if(e){ const cur=intKm(e.km)||0; if(rec.km>cur) e.km=String(rec.km); } }
+  save(); renderCombustible(); toast('Carga registrada','ok');
 }
 
 /* ---------- Portería (control de ingreso/salida) ---------- */
