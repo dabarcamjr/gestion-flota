@@ -502,6 +502,7 @@ function registrarMantencion(){
 /* ---------- Estado de la flota (operativo) ---------- */
 let FLOTA = { tipo:'todos', op:'todos', q:'' };
 let FLOTA_ID = null;
+let flSign = null;   // firma digital en curso (dataURL)
 function ultimoMov(e){ const m=(e.movimientos||[]); return m.length? m.slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''))[0] : null; }
 function renderFlota(){
   const eq=DB.equipos;
@@ -549,7 +550,7 @@ function renderFlota(){
 }
 function openFlotaDetail(id){
   const e=DB.equipos.find(x=>x.id===id); if(!e) return;
-  FLOTA_ID=id;
+  FLOTA_ID=id; flSign=null;
   $('#flTitle').textContent=e.patente+' · '+(e.tipo==='tracto'?'Tracto':'Rampla');
   renderFlotaBody();
   $('#flotaOverlay').classList.add('open');
@@ -600,6 +601,9 @@ function renderFlotaBody(){
       ${pos.map(p=>`<tr><td><b>${esc(p)}</b></td><td><select class="input neu-est" data-pos="${esc(p)}">${NEU_EST.map(o=>`<option value="${o}">${o||'—'}</option>`).join('')}</select></td><td><input class="input neu-cod" data-pos="${esc(p)}"></td></tr>`).join('')}
     </tbody></table></div>
     <div class="field" style="margin-top:8px"><label>Observaciones generales</label><textarea class="input" id="mv_obs" rows="2" style="width:100%;resize:vertical"></textarea></div>
+    <div class="section-title">Firma del conductor <span class="hint">(firma con el dedo o el mouse)</span></div>
+    <canvas id="sigpad" class="sigpad" width="600" height="150"></canvas>
+    <div style="margin-top:6px"><button class="btn sm" id="sigclear" type="button">Limpiar firma</button></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
       <button class="btn primary" id="mv_save">Registrar movimiento</button>
       <button class="btn" id="mv_print">🖨️ Imprimir para el conductor</button>
@@ -622,7 +626,21 @@ function renderFlotaBody(){
   $('#mv_save').onclick=registrarMovimiento;
   $('#mv_print').onclick=()=>printChecklist(gatherMovement(e));
   $$('.reprint').forEach(a=> a.onclick=ev=>{ ev.preventDefault(); const m=(e.movimientos||[]).find(x=>x.id===a.dataset.mid); if(m) printChecklist(m); });
-  updateTotals();
+  const sc=$('#sigclear'); if(sc) sc.onclick=()=>{ flSign=null; initSigPad(); };
+  updateTotals(); initSigPad();
+}
+function initSigPad(){
+  const c=document.getElementById('sigpad'); if(!c) return;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.lineWidth=2.2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.strokeStyle='#111';
+  if(flSign){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height); img.src=flSign; }
+  let drawing=false, last=null;
+  const pos=e=>{ const r=c.getBoundingClientRect(); return { x:(e.clientX-r.left)*(c.width/r.width), y:(e.clientY-r.top)*(c.height/r.height) }; };
+  c.onpointerdown=e=>{ drawing=true; last=pos(e); try{c.setPointerCapture(e.pointerId);}catch(x){} };
+  c.onpointermove=e=>{ if(!drawing)return; const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; };
+  const end=()=>{ if(drawing){ drawing=false; flSign=c.toDataURL('image/png'); } };
+  c.onpointerup=end; c.onpointerleave=end;
 }
 function updateTotals(){
   let grand=0;
@@ -636,7 +654,7 @@ function gatherMovement(e){
   $$('#mv_neu .neu-est').forEach(sel=>{ const p=sel.dataset.pos; const cod=$('#mv_neu .neu-cod[data-pos="'+p+'"]'); const codv=cod?cod.value.trim():''; if(sel.value||codv) neumaticos[p]={estado:sel.value,codigo:codv}; });
   return { tipo:$('#mv_tipo').value, folio:$('#mv_folio').value.trim(), fecha:$('#mv_fecha').value||toISO(today0()),
     conductor:$('#mv_conductor').value.trim(), guardia:$('#mv_guardia').value.trim(), inspector:$('#mv_inspector').value.trim(),
-    km:$('#mv_km').value.trim(), patente:e.patente, tipoEquipo:e.tipo, items, neumaticos, obs:$('#mv_obs').value.trim() };
+    km:$('#mv_km').value.trim(), patente:e.patente, tipoEquipo:e.tipo, items, neumaticos, obs:$('#mv_obs').value.trim(), firma:flSign||null };
 }
 function registrarMovimiento(){
   const e=DB.equipos.find(x=>x.id===FLOTA_ID); if(!e) return;
@@ -645,6 +663,7 @@ function registrarMovimiento(){
   if(mov.tipo==='entrega'){ e.conductor=mov.conductor; e.estadoOp='en_ruta'; } else { e.estadoOp='en_patio'; e.conductor=''; }
   if(mov.km) e.km=mov.km;
   if(DB.folioSeq && DB.folioSeq[e.tipo]!==undefined) DB.folioSeq[e.tipo]++;
+  flSign=null;
   save(); renderFlotaBody(); render(); toast(mov.tipo==='entrega'?'Entrega registrada':'Devolución registrada','ok');
 }
 function printChecklist(mov){
@@ -675,7 +694,7 @@ function buildPrintHTML(e, mov){
     .fld b{color:#1f4e79}
     .two{display:flex;gap:12px;align-items:flex-start} .two>div{flex:1}
     .decl{font-size:10.5px;margin-top:8px;border:1px solid #888;padding:6px}
-    .sign{display:flex;gap:14px;margin-top:22px} .sign div{flex:1;text-align:center;border-top:1px solid #000;padding-top:3px;font-size:10.5px}
+    .sign{display:flex;gap:14px;margin-top:30px} .sign>div{flex:1;text-align:center} .sign img{display:block;margin:0 auto 2px} .sign .sl{border-top:1px solid #000;padding-top:3px;font-size:10.5px}
     @media print{body{margin:8mm}}
   </style></head><body>
   <div class="hd"><div><div class="brand">TZAMORA</div><h1>Checklist — Registro de Entrega y Recepción: ${tipo==='tracto'?'TRACTO':'RAMPLA'}</h1>
@@ -700,7 +719,7 @@ function buildPrintHTML(e, mov){
   </div>
   <div class="fld" style="width:100%"><b>Observaciones:</b> ${esc(mov.obs||'')}</div>
   <div class="decl">El conductor declara haber recibido conforme los artículos, y se compromete a cuidar y proteger los artículos señalados, los cuales están avaluados en <b>${money(grand)}</b>.</div>
-  <div class="sign"><div>Firma Conductor</div><div>Firma Guardia</div><div>Firma Supervisor</div></div>
+  <div class="sign"><div>${mov.firma?`<img src="${mov.firma}" style="max-height:46px;max-width:180px">`:'&nbsp;'}<div class="sl">Firma Conductor</div></div><div><div class="sl">Firma Guardia</div></div><div><div class="sl">Firma Supervisor</div></div></div>
   </body></html>`;
 }
 
