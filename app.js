@@ -577,39 +577,34 @@ function buildPrintHTML(e, mov){
 let DASH = { win:'pend' }; // pend = vencidos + por vencer
 function renderDashboard(){
   const equipos = DB.equipos;
-  // KPIs por estado general
-  const rows = equipos.map(e=>({e, ...evalEntidad(e, e.tipo)}));
-  const c={total:rows.length,vencido:0,por_vencer:0,vigente:0,sin_dato:0};
-  rows.forEach(r=>c[r.estado]++);
-  $('#kpis').innerHTML = `
-    <div class="kpi"><div class="n">${c.total}</div><div class="l">equipos</div></div>
-    <div class="kpi red"><div class="n">${c.vencido}</div><div class="l">Con doc. vencido</div></div>
-    <div class="kpi amber"><div class="n">${c.por_vencer}</div><div class="l">Por vencer (≤30 días)</div></div>
-    <div class="kpi green"><div class="n">${c.vigente}</div><div class="l">Al día</div></div>`;
+  const genRows = equipos.map(e=>({e, ...evalEntidad(e, e.tipo)}));
+  const gd={vencido:0,por_vencer:0,vigente:0,sin_dato:0}; genRows.forEach(r=>gd[r.estado]++);
+  const mRows = equipos.filter(e=>e.tipo==='tracto').map(e=>({e, ...evalMant(e)}));
+  const mVenc=mRows.filter(r=>r.est==='vencida'), mProx=mRows.filter(r=>r.est==='proxima');
+  const fd={en_ruta:0,en_patio:0,en_taller:0}; equipos.forEach(e=>{const s=e.estadoOp||'en_patio'; fd[s]=(fd[s]||0)+1;});
+  const enTaller=equipos.filter(e=>(e.estadoOp||'')==='en_taller');
 
-  // Lista de documentos por vencer/vencidos (todos los documentos de fecha)
+  $('#kpis').innerHTML = `
+    <div class="kpi red"><div class="n">${gd.vencido}</div><div class="l">Equipos con doc. vencido</div></div>
+    <div class="kpi amber"><div class="n">${gd.por_vencer}</div><div class="l">Docs por vencer (≤30 días)</div></div>
+    <div class="kpi"><div class="n" style="color:var(--red)">${mVenc.length}</div><div class="l">Mantención vencida</div></div>
+    <div class="kpi"><div class="n" style="color:var(--brand)">${fd.en_ruta}</div><div class="l">En ruta</div></div>`;
+
+  // documentos a atender (con filtro)
   const items=[];
-  equipos.forEach(e=>{
-    docTypesFor(e.tipo).forEach(dt=>{
-      if(dt.tipo==='presencia') return;
-      const s = docStatus(e.docs&&e.docs[dt.id], dt);
-      if((s.est==='vencido'||s.est==='por_vencer') && s.ven!=null){
-        items.push({patente:e.patente, tipo:e.tipo, id:e.id, doc:dt.nombre, ven:s.ven, dias:s.dias, est:s.est, general:dt.general!==false});
-      }
-    });
-  });
+  equipos.forEach(e=>{ docTypesFor(e.tipo).forEach(dt=>{ if(dt.tipo==='presencia')return; const s=docStatus(e.docs&&e.docs[dt.id],dt);
+    if((s.est==='vencido'||s.est==='por_vencer')&&s.ven!=null) items.push({patente:e.patente,tipo:e.tipo,id:e.id,doc:dt.nombre,ven:s.ven,dias:s.dias,est:s.est,general:dt.general!==false}); }); });
   items.sort((a,b)=>a.dias-b.dias);
   const win=DASH.win;
-  const filt = items.filter(it=> win==='vencidos'?it.est==='vencido' : win==='7'?it.dias<=7 : win==='30'?it.dias<=30 : true);
-  const nVenc = items.filter(i=>i.est==='vencido').length;
+  const filt=items.filter(it=> win==='vencidos'?it.est==='vencido':win==='7'?it.dias<=7:win==='30'?it.dias<=30:true);
+  const nVenc=items.filter(i=>i.est==='vencido').length;
   const chip=(k,l)=>`<button class="segb${win===k?' active':''}" data-win="${k}">${l}</button>`;
 
-  // Acreditación por cliente (cards)
+  // acreditación por cliente (cards)
   const clientCards = DB.clientes.map(cli=>{
     const parts = ['tracto','rampla'].map(tp=>{
       const ids=reqIds(cli,tp); if(!ids.length) return '';
-      const base=DB.equipos.filter(e=>e.tipo===tp);
-      let ac=0,pv=0,no=0;
+      const base=DB.equipos.filter(e=>e.tipo===tp); let ac=0,pv=0,no=0;
       base.forEach(e=>{const o=evalCliente(e,tp,ids).overall; if(o==='acreditado')ac++; else if(o==='por_vencer')pv++; else if(o==='no_acreditado')no++;});
       const tot=base.length;
       return `<div class="ccrow"><span class="cclbl">${tp==='tracto'?'Tractos':'Ramplas'}</span>
@@ -619,33 +614,41 @@ function renderDashboard(){
     return `<button class="clientcard" data-cli="${cli.id}"><h4>${esc(cli.nombre)}</h4>${parts||'<div class="hint">sin requisitos</div>'}</button>`;
   }).join('');
 
-  let html = `
-    <section class="dashsec">
-      <div class="dashhead"><h3>Acreditación por cliente</h3><span class="hint">🟢 acreditado · 🟡 por vencer · 🔴 no acreditado · click para ver detalle</span></div>
-      <div class="clientcards">${clientCards}</div>
-    </section>
-    <section class="dashsec">
-      <div class="dashhead"><h3>Vencimientos a atender</h3>
-        <div class="seg">${chip('vencidos','Vencidos ('+nVenc+')')}${chip('7','≤7 días')}${chip('30','≤30 días')}${chip('pend','Todos')}</div>
-      </div>`;
-  if(!filt.length){
-    html += `<div class="tablewrap"><div class="empty">Nada por atender en este filtro. 🎉</div></div>`;
-  } else {
-    const body = filt.slice(0,60).map(it=>{
-      const txt = it.dias<0?`hace ${-it.dias} d`:(it.dias===0?'hoy':`en ${it.dias} d`);
-      return `<tr data-id="${it.id}"><td><b>${esc(it.patente)}</b></td><td><span class="pilltipo">${it.tipo==='tracto'?'Tracto':'Rampla'}</span></td>
-        <td>${esc(it.doc)}${it.general?'':' <span class="pilltipo" style="opacity:.7">cliente</span>'}</td>
-        <td>${badge(it.est)}</td><td class="mono">${fmt(it.ven)}</td><td class="dias">${txt}</td></tr>`;
-    }).join('');
-    html += `<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Tipo</th><th>Documento</th><th>Estado</th><th>Vence</th><th>Faltan</th></tr></thead><tbody>${body}</tbody></table></div>
-      ${filt.length>60?`<p class="hint" style="margin-top:8px">Mostrando 60 de ${filt.length}. Usa los filtros para acotar.</p>`:''}`;
-  }
-  html += `</section>`;
-  $('#view').innerHTML = html;
+  let html='';
+  // Documentos a atender
+  html += `<section class="dashsec"><div class="dashhead"><h3>Documentos a atender</h3>
+      <div class="seg">${chip('vencidos','Vencidos ('+nVenc+')')}${chip('7','≤7 días')}${chip('30','≤30 días')}${chip('pend','Todos')}</div></div>`;
+  if(!filt.length){ html+='<div class="tablewrap"><div class="empty">Nada por atender en este filtro. 🎉</div></div>'; }
+  else { const body=filt.slice(0,50).map(it=>{ const txt=it.dias<0?`hace ${-it.dias} d`:(it.dias===0?'hoy':`en ${it.dias} d`);
+      return `<tr class="row-doc" data-id="${it.id}"><td><b>${esc(it.patente)}</b></td><td><span class="pilltipo">${it.tipo==='tracto'?'Tracto':'Rampla'}</span></td>
+        <td>${esc(it.doc)}${it.general?'':' <span class="pilltipo" style="opacity:.7">cliente</span>'}</td><td>${badge(it.est)}</td><td class="mono">${fmt(it.ven)}</td><td class="dias">${txt}</td></tr>`; }).join('');
+    html+=`<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Tipo</th><th>Documento</th><th>Estado</th><th>Vence</th><th>Faltan</th></tr></thead><tbody>${body}</tbody></table></div>${filt.length>50?`<p class="hint" style="margin-top:8px">Mostrando 50 de ${filt.length}.</p>`:''}`; }
+  html+='</section>';
 
+  // Mantención a atender
+  html += `<section class="dashsec"><div class="dashhead"><h3>Mantención a atender</h3><span class="hint">tractos vencidos o próximos · click para el detalle</span></div>`;
+  const ml=[...mVenc, ...mProx];
+  if(!ml.length){ html+='<div class="tablewrap"><div class="empty">Ninguna mantención pendiente. 🎉</div></div>'; }
+  else { const b=ml.map(r=>`<tr class="row-mant" data-id="${r.e.id}"><td><b>${esc(r.e.patente)}</b></td><td class="mono">${nkm(r.kmAct)}</td><td class="mono">${nkm(r.prox)}</td><td><span class="badge m_${r.est}">${MANT_LABEL[r.est]}</span> <span class="dias">${r.faltante<0?('-'+nkm(-r.faltante)):nkm(r.faltante)} km</span></td></tr>`).join('');
+    html+=`<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Km actual</th><th>Próxima</th><th>Faltan</th></tr></thead><tbody>${b}</tbody></table></div>`; }
+  html+='</section>';
+
+  // Estado de la flota
+  html += `<section class="dashsec"><div class="dashhead"><h3>Estado de la flota</h3><span class="hint">🔵 ${fd.en_ruta} en ruta · 🟢 ${fd.en_patio} en patio · 🟠 ${fd.en_taller} en taller</span></div>`;
+  if(enTaller.length){ const b=enTaller.map(e=>`<tr class="row-flota" data-id="${e.id}"><td><b>${esc(e.patente)}</b></td><td><span class="pilltipo">${e.tipo==='tracto'?'Tracto':'Rampla'}</span></td><td>${esc(e.conductor||'—')}</td><td><span class="badge op_en_taller">En taller</span></td></tr>`).join('');
+    html+=`<div class="tablewrap"><table><thead><tr><th>Patente</th><th>Tipo</th><th>Conductor</th><th>Estado</th></tr></thead><tbody>${b}</tbody></table></div>`; }
+  else { html+='<div class="tablewrap"><div class="empty">Ningún equipo en taller. 👍</div></div>'; }
+  html+='</section>';
+
+  // Acreditación por cliente
+  html += `<section class="dashsec"><div class="dashhead"><h3>Acreditación por cliente</h3><span class="hint">🟢 acreditado · 🟡 por vencer · 🔴 no acreditado · click para el detalle</span></div><div class="clientcards">${clientCards}</div></section>`;
+
+  $('#view').innerHTML = html;
   $$('.clientcard').forEach(b=> b.onclick=()=>{ CLIENT.id=b.dataset.cli; VIEW='clientes'; render(); });
   $$('.seg [data-win]').forEach(b=> b.onclick=()=>{ DASH.win=b.dataset.win; renderDashboard(); });
-  $$('#view tbody tr').forEach(tr=> tr.onclick=()=>{ VIEW='equipos'; openEdit(tr.dataset.id); VIEW='dashboard'; });
+  $$('.row-doc').forEach(tr=> tr.onclick=()=>{ VIEW='equipos'; openEdit(tr.dataset.id); VIEW='dashboard'; });
+  $$('.row-mant').forEach(tr=> tr.onclick=()=> openMantDetail(tr.dataset.id));
+  $$('.row-flota').forEach(tr=> tr.onclick=()=> openFlotaDetail(tr.dataset.id));
 }
 
 function currentList(){
